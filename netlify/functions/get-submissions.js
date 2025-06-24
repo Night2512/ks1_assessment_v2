@@ -35,15 +35,15 @@ exports.handler = async (event, context) => {
 
   try {
     const pool = await getDbConnection();
-    // This query fetches all submissions, ordered by submission_time
-    const result = await pool.query('SELECT * FROM assessments ORDER BY submission_time DESC'); 
+    // Corrected column name to 'submitted_at'
+    const result = await pool.query('SELECT * FROM assessments ORDER BY submitted_at DESC'); 
 
     return {
       statusCode: 200,
       body: JSON.stringify(result.rows),
     };
   } catch (error) {
-    console.error('Error fetching all submissions:', error); // Changed log message
+    console.error('Error fetching all submissions:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Failed to fetch submissions.', error: error.message }),
