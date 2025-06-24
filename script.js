@@ -164,7 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q14',
             type: 'radio',
-            question: "How many apples are there? (Based on 13_apples.jpg image)",
+            question: "How many apples are there?",
+            image: "images/13_apples.jpg", // Added image path
+            imageAlt: "A picture of 13 apples",
             options: { a: "11", b: "13", c: "15" },
             correctAnswer: "b",
             correctAnswerDisplay: "13"
@@ -193,7 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q18',
             type: 'radio',
-            question: "What time does the clock show? (Based on clock_3_oclock.png image)",
+            question: "What time does the clock show?",
+            image: "images/clock_3_oclock.png", // Added image path
+            imageAlt: "A clock showing 3 o'clock",
             options: { a: "1 o'clock", b: "3 o'clock", c: "6 o'clock" },
             correctAnswer: "b",
             correctAnswerDisplay: "3 o'clock"
@@ -208,7 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q20',
             type: 'radio',
-            question: "What fraction of the circle is shaded? (Based on shaded_circle.png image, 1/4 shaded)",
+            question: "What fraction of the circle is shaded?",
+            image: "images/shaded_circle.png", // Added image path
+            imageAlt: "A circle with one-fourth shaded",
             options: { a: "1/2", b: "1/3", c: "1/4" },
             correctAnswer: "c",
             correctAnswerDisplay: "1/4"
