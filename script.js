@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q1',
             type: 'radio',
+            topicHeading: "Reading Comprehension - Passage",
             question: "What is the cat's name?",
             passage: "Lily loves animals. She has a fluffy white cat named Snowdrop. Snowdrop likes to play with a red ball of yarn. Lily also has a small, brown dog called Buster. Buster loves to run in the park and chase squirrels.",
             options: { a: "Buster", b: "Snowdrop", c: "Lily" },
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q2',
             type: 'radio',
+            topicHeading: "Reading Comprehension - Detail",
             question: "What colour is the cat?",
             options: { a: "Brown", b: "Red", c: "White" },
             correctAnswer: "c",
@@ -84,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q3',
             type: 'text',
+            topicHeading: "Grammar - Plural Nouns",
             question: "Fill in the missing word: Lily gets a second fluffy white cat. Now she has two fluffy white ____.",
             correctAnswer: "cats",
             explanation: "The plural of cat is 'cats'."
@@ -91,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q4',
             type: 'text',
+            topicHeading: "Spelling - Animal Names",
             question: "Spell the word for the animal that chases squirrels in the park.",
             correctAnswer: "dog",
             explanation: "The animal that chases squirrels in the park is a dog."
@@ -98,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q5',
             type: 'text',
+            topicHeading: "Sentence Structure - Reordering",
             question: "Put the words in the correct order to make a sentence: park., to, in, run, loves, Buster, the",
             correctAnswer: "Buster loves to run in the park.",
             explanation: "The correct sentence is 'Buster loves to run in the park.'"
@@ -105,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q6',
             type: 'text',
+            topicHeading: "Grammar - Verbs",
             question: "What is the verb in the sentence: \"The bird flies high.\"?",
             correctAnswer: "flies",
             explanation: "The verb describes the action, which is 'flies'."
@@ -112,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q7',
             type: 'radio',
+            topicHeading: "Vocabulary - Opposites",
             question: "What is the opposite of 'big'?",
             options: { a: "large", b: "small", c: "huge" },
             correctAnswer: "b",
@@ -120,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q8',
             type: 'radio',
+            topicHeading: "Phonics - Rhyming Words",
             question: "Which word rhymes with 'tree'?",
             options: { a: "bee", b: "cat", c: "dog" },
             correctAnswer: "a",
@@ -128,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q9',
             type: 'text',
+            topicHeading: "Vocabulary - Sentence Completion",
             question: "Complete the sentence: \"I like to read a good _____.\"",
             correctAnswer: "book",
             explanation: "A common word to complete the sentence is 'book'."
@@ -135,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q10',
             type: 'radio',
+            topicHeading: "Grammar - Nouns",
             question: "Which word is a noun?",
             options: { a: "run", b: "quickly", c: "table" },
             correctAnswer: "c",
@@ -143,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q11',
             type: 'radio',
+            topicHeading: "Grammar - Past Tense",
             question: "What is the past tense of 'go'?",
             options: { a: "went", b: "go", c: "goes" },
             correctAnswer: "a",
@@ -151,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q12',
             type: 'text',
+            topicHeading: "Sentence Construction - Word Usage",
             question: "Write a sentence using the word 'blue'.",
             correctAnswer: "The sky is blue.", // This is now an example, not a strict match
             explanation: "An example sentence is 'The sky is blue.' (Other grammatically correct sentences using 'blue' would also be acceptable)."
@@ -158,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q13',
             type: 'text',
+            topicHeading: "Grammar - Contractions",
             question: "What is the contraction for 'I am'?",
             correctAnswer: "I'm",
             explanation: "The contraction for 'I am' is 'I'm'."
@@ -165,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q14',
             type: 'radio',
+            topicHeading: "Mathematics - Counting",
             question: "How many apples are there?",
             image: "images/13_apples.jpg", // Added image path
             imageAlt: "A picture of 13 apples",
@@ -175,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q15',
             type: 'number',
+            topicHeading: "Mathematics - Addition",
             question: "What is 7 + 5?",
             correctAnswer: 12,
             explanation: "7 plus 5 equals 12."
@@ -182,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q16',
             type: 'number',
+            topicHeading: "Mathematics - Subtraction",
             question: "What is 10 - 3?",
             correctAnswer: 7,
             explanation: "10 minus 3 equals 7."
@@ -189,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q17',
             type: 'number',
+            topicHeading: "Mathematics - Missing Numbers",
             question: "5 + ___ = 10",
             correctAnswer: 5,
             explanation: "5 plus 5 equals 10."
@@ -196,6 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q18',
             type: 'radio',
+            topicHeading: "Mathematics - Telling Time",
             question: "What time does the clock show?",
             image: "images/clock_3_oclock.png", // Added image path
             imageAlt: "A clock showing 3 o'clock",
@@ -206,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q19',
             type: 'number',
+            topicHeading: "Mathematics - Word Problems (Addition)",
             question: "Sarah has 6 red pens and 4 blue pens. How many pens does she have altogether?",
             correctAnswer: 10,
             explanation: "6 pens + 4 pens = 10 pens."
@@ -213,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q20',
             type: 'radio',
+            topicHeading: "Mathematics - Fractions",
             question: "What fraction of the circle is shaded?",
             image: "images/shaded_circle.png", // Added image path
             imageAlt: "A circle with one-fourth shaded",
@@ -223,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q21',
             type: 'number',
+            topicHeading: "Mathematics - Geometry (Shapes)",
             question: "How many corners does a square have?",
             correctAnswer: 4,
             explanation: "A square has 4 corners."
@@ -230,6 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q22',
             type: 'number',
+            topicHeading: "Mathematics - Repeated Addition",
             question: "What is 2 + 2 + 2?",
             correctAnswer: 6,
             explanation: "2 + 2 + 2 = 6."
@@ -237,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q23',
             type: 'number',
+            topicHeading: "Mathematics - Word Problems (Subtraction)",
             question: "If you have 7 balloons and 3 pop, how many are left?",
             correctAnswer: 4,
             explanation: "7 balloons - 3 popped balloons = 4 balloons left."
@@ -244,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q24',
             type: 'number',
+            topicHeading: "Mathematics - Halving",
             question: "Half of 12 is?",
             correctAnswer: 6,
             explanation: "Half of 12 is 6."
@@ -251,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q25',
             type: 'number',
+            topicHeading: "Mathematics - Number Patterns",
             question: "Count by 5s: 5, 10, 15, ___?",
             correctAnswer: 20,
             explanation: "The next number in the pattern 5, 10, 15 is 20 (counting by 5s)."
@@ -258,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q26',
             type: 'text',
+            topicHeading: "Mathematics - Geometry (Everyday Objects)",
             question: "What shape is a regular door?",
             correctAnswer: "rectangle",
             explanation: "A regular door is typically a rectangle."
@@ -265,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q27',
             type: 'number',
+            topicHeading: "Mathematics - Time (Days in a Week)",
             question: "How many days are in a week?",
             correctAnswer: 7,
             explanation: "There are 7 days in a week."
@@ -272,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q28',
             type: 'number',
+            topicHeading: "Mathematics - Subtraction",
             question: "What is 15 take away 5?",
             correctAnswer: 10,
             explanation: "15 take away 5 equals 10."
@@ -279,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q29',
             type: 'radio',
+            topicHeading: "Mathematics - Measurement (Weight)",
             question: "Which is heavier, a feather or a brick?",
             options: { a: "Feather", b: "Brick" },
             correctAnswer: "b",
@@ -287,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             id: 'q30',
             type: 'number',
+            topicHeading: "Mathematics - Multiplication (Groups)",
             question: "If you have 4 groups of 2 objects, how many objects do you have in total?",
             correctAnswer: 8,
             explanation: "4 groups of 2 objects is 4 multiplied by 2, which equals 8."
@@ -339,7 +369,10 @@ document.addEventListener('DOMContentLoaded', () => {
             questionHtml += `<div class="passage"><p>${q.passage}</p></div>`;
         }
 
-        questionHtml += `<h3>${index + 1}. ${q.question}</h3>`; // Added index + 1 for question numbering display
+        // Display topic heading and then question text
+        questionHtml += `<h3>Q${index + 1}. ${q.topicHeading}</h3>`;
+        questionHtml += `<p class="question-text-content">${q.question}</p>`;
+
 
         // Add image if specified in question object
         if (q.image) {
@@ -464,8 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Prepare HTML results (for email) based on the provided sample
             resultsHtmlEmailContent += `
                 <div class="question-item">
-                    <h4>Q${index + 1}. ${q.question}</h4>
-                    <p><strong>Your Answer:</strong> ${userAnswerDisplay}</p>
+                    <h4>Q${index + 1}. ${q.topicHeading}</h4>
+                    <p>${q.question}</p> <p><strong>Your Answer:</strong> ${userAnswerDisplay}</p>
                     <p><strong>Correct Answer:</strong> ${q.correctAnswerDisplay || q.correctAnswer}</p>
                     <p><strong>Score:</strong> ${questionScore}/1</p>
                     <p><strong>Outcome:</strong> <span class="${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Correct' : 'Incorrect'}</span></p>
@@ -474,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             // Prepare Plain Text results (for email)
-            resultsTextContent += `\nQuestion ${index + 1}: ${q.question}\n`;
+            resultsTextContent += `\nQuestion ${index + 1}: ${q.topicHeading} - ${q.question}\n`;
             resultsTextContent += `Your Answer: ${userAnswerDisplay} (${isCorrect ? 'Correct' : 'Incorrect'})\n`;
             resultsTextContent += `Correct Answer: ${q.correctAnswerDisplay || q.correctAnswer}\n`;
             if (explanation) {

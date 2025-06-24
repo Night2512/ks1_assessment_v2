@@ -28,27 +28,34 @@
                     <input type="email" id="parentEmail" name="parentEmail" required>
                 </div>
 				<div class="passage">
-                    <p id="assessmentIntro">The assessment has a 15 minute time limit. It will automatically submit once this time expires.</p>
+                    <p id="assessmentIntro"></p>
                 </div>
-                <button type="submit" id="startAssessmentBtn" disabled>Start Assessment</button>
-                <p class="small-text" id="securityCheckText">Please complete the security check above to enable the 'Start Assessment' button.</p>
-                <div class="turnstile-container">
-                    <div class="cf-turnstile" data-sitekey="0x4AAAAAABhJZmNH0OLuZAif" data-callback="turnstileCallback" data-error-callback="turnstileErrorCallback"></div>
+
+				<div>
+                    <button type="submit" id="startAssessmentBtn" disabled>Start Assessment</button>
+                    <p></p>
+                    <div class="turnstile-container">
+                        <div class="cf-turnstile" data-sitekey="0x4AAAAAABhJZmNH0OLuZAif" data-callback="turnstileCallback" data-error-callback="turnstileErrorCallback"></div>
+                        <p id="securityCheckText" class="small-text"></p>
+                    </div>
                 </div>
             </form>
         </div>
 
-        <div id="assessmentSection" class="section" style="display: none;">
-            <p class="timer-display">Time Left: <span id="time">15:00</span></p>
-            <p class="progress-indicator">Question <span id="currentQNum">1</span> of <span id="totalQNum">30</span></p>
-
+        <div id="assessmentSection" class="section" style="display:none;">
+            <div class="assessment-header">
+                <h2 id="assessmentHeading">Assessment</h2>
+                <div class="timer-wrapper">Time Left: <span id="time">15:00</span></div>
+            </div>
+            
             <form id="assessmentForm">
-                <div id="questionsContainer">
-                    </div>
+                <section id="questionsContainer" class="questions-grid">
+                    </section>
 
-                <div class="navigation-buttons">
+				<div>
                     <button type="button" id="nextQuestionBtn">Next Question</button>
                     <button type="submit" id="submitAssessmentBtn" style="display:none;">Submit Assessment</button>
+                    <p class="question-progress">Question <span id="currentQNum">1</span> of <span id="totalQNum">30</span></p>
                 </div>
             </form>
         </div>

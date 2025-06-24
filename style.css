@@ -43,25 +43,26 @@ h1, h2, h3 {
 }
 
 .question-block input[type="text"],
-.question-block input[type="number"],
-.question-block input[type="email"] {
-    width: calc(100% - 22px); /* Account for padding and border */
+.question-block input[type="number"] {
+    width: calc(100% - 22px); /* Adjust width for padding and border */
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
-.question-block label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
+/* For radio buttons, adjust layout if needed */
 .question-block input[type="radio"] {
     margin-right: 8px;
 }
 
+.question-block label {
+    display: flex; /* Aligns radio button and text nicely */
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* Buttons */
 button {
     background-color: #007bff;
     color: white;
@@ -71,9 +72,13 @@ button {
     cursor: pointer;
     font-size: 1em;
     margin-top: 10px;
+    display: block;
+    width: fit-content; /* Adjust width to content */
+    margin-left: auto;
+    margin-right: auto;
 }
 
-button:hover {
+button:hover:not(:disabled) {
     background-color: #0056b3;
 }
 
@@ -82,57 +87,42 @@ button:disabled {
     cursor: not-allowed;
 }
 
-.turnstile-container {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
+.question-progress {
     text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
 }
 
-.small-text {
-    font-size: 0.8em;
-    color: #666;
-    margin-top: 10px;
-}
-
-/* Styles for results page */
+/* Results styles */
 .results-container {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px dashed #ccc;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fdfdfd;
 }
 
 .result-item {
     margin-bottom: 15px;
     padding: 10px;
-    border: 1px solid #eee;
+    border: 1px solid #e9e9e9;
     border-radius: 5px;
-    background-color: #f9f9f9;
+    background-color: #ffffff;
 }
 
-.result-item p {
-    margin: 5px 0;
-}
-
-.result-item .user-answer {
+.correct {
+    color: green;
     font-weight: bold;
 }
 
-.result-item .correct {
-    color: #28a745; /* Green */
+.incorrect {
+    color: red;
     font-weight: bold;
 }
 
-.result-item .incorrect {
-    color: #dc3545; /* Red */
-    font-weight: bold;
-}
-
-.result-item .explanation {
-    color: #007bff; /* Blue */
-    font-weight: bold;
+.explanation {
+    font-style: italic;
+    color: #555;
+    margin-top: 5px;
 }
 
 #overallScore {
@@ -173,20 +163,50 @@ button:disabled {
     cursor: pointer;
     font-size: 1.1em;
     display: block;
-    width: 200px; /* Adjust as needed */
-    margin: 20px auto 0 auto; /* Center the button */
+    width: 200px; /* Specific width */
+    margin: 20px auto 10px auto; /* Center button */
 }
 
+/* Text centering as requested */
+#assessmentIntro,
+#securityCheckText {
+    text-align: center;
+}
+
+#resultsHeading {
+    text-align: center;
+}
+
+/* Timer styles */
 .assessment-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Pushes children to ends */
     align-items: center;
     margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
 }
 
-.progress-indicator {
+.timer-wrapper {
+    font-size: 1.2em;
+    padding: 5px 10px;
+    background-color: #f9f9f9; /* Consistent with question blocks */
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.05);
+}
+#time {
+    color: red;
     font-weight: bold;
-    color: #0056b3;
+}
+
+/* New style for the actual question text content when displayed below the topic */
+.question-text-content {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    font-weight: normal; /* Ensure it's not bold like the heading */
+}
+
+/* Styles for messages that appear on results page */
+#detailedResults p, /* This p tag holds the "Your full detailed results..." message */
+#emailStatus {
+    text-align: center;
+    margin-top: 10px; /* Adjust spacing */
 }
