@@ -582,7 +582,7 @@ ${resultsTextContent}
         <p><strong>Overall Score:</strong> ${score}/${questions.length}</p>
         <p><strong>Overall Performance:</strong> <span class="${expectationsClass}">${overallExpectations}</span></p>
         ${assessmentSubmittedByTime ? `<p style="color:#dc3545;font-weight:bold;">${CUSTOM_CONTENT.timeUpMessage}</p>` : ''}
-        
+
         ${resultsHtmlEmailContent} <div class="score-summary">
             <h3>Overall Score: ${score}/${questions.length}</h3>
             <h3>Overall Outcome: <span class="${expectationsClass}">${overallExpectations}</span></h3>
@@ -676,6 +676,19 @@ ${resultsTextContent}
 
         showQuestion(currentQuestionIndex);
         startTimer();
+    });
+
+    // New: Prevent unintended form submission on Enter key press within info form inputs
+    infoForm.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const focusedElement = e.target;
+            if (focusedElement.tagName.toLowerCase() === 'input' &&
+                (focusedElement.type === 'text' || focusedElement.type === 'email')) { // Added 'email' type
+                e.preventDefault(); // Stop the default form submission
+                // This doesn't trigger a click on startAssessmentBtn directly
+                // Instead, the user needs to click the button or complete turnstile
+            }
+        }
     });
 
     // Cloudflare Turnstile Callback
