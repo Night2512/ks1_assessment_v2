@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const submissionsTableBody = document.querySelector('#submissionsTable tbody');
     const loadingMessage = document.getElementById('loadingMessage');
     const errorMessage = document.getElementById('errorMessage');
-    const logoutBtn = document = document.getElementById('logoutBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
     const filterChildNameInput = document.getElementById('filterChildName');
     const filterParentEmailInput = document.getElementById('filterParentEmail');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
