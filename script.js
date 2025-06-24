@@ -363,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         questionBlock.id = q.id;
 
         let questionHtml = '';
+
         // Add passage if it exists for this question
         if (q.passage) {
             questionHtml += `<div class="passage"><p>${q.passage}</p></div>`;
@@ -371,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display topic heading and then question text
         questionHtml += `<h3>Q${index + 1}. ${q.topicHeading}</h3>`;
         questionHtml += `<p class="question-text-content">${q.question}</p>`;
+
 
         // Add image if specified in question object
         if (q.image) {
@@ -453,223 +455,231 @@ document.addEventListener('DOMContentLoaded', () => {
         let score = 0;
         let resultsHtmlEmailContent = ''; // This will store the detailed HTML for email
         let resultsTextContent = `Detailed Results:\n`;
-
         const scoreThresholds = {
             below: questions.length * 0.33, // Example: Below 33% is Below Expectations
-            meets: questions.length * 0.66 // Example: 33-65% is Meets, >= 66% is Above
+            meets: questions.length * 0.66  // Example: 33-65% is Meets, >= 66% is Above
         };
+
 
         questions.forEach((q, index) => {
             const userAnswer = userAnswers[q.id];
             let isCorrect = false;
             let explanation = q.explanation || '';
             let userAnswerDisplay = userAnswer === '' ? 'No Answer' : userAnswer;
-            let questionScore = 0; // 0 or 1 for this question
+            let questionScore = 0; // 0 or 1 for each question
 
-            // Correctness logic based on question type
             if (q.type === 'radio') {
-                isCorrect = (userAnswer === q.correctAnswer);
+                isCorrect = userAnswer === q.correctAnswer;
+                if (userAnswer && q.options[userAnswer]) {
+                    userAnswerDisplay = q.options[userAnswer]; // Display the option text, not just the key
+                }
             } else if (q.type === 'text') {
-                // For text answers, consider case-insensitivity and trim whitespace
-                isCorrect = (userAnswer.trim().toLowerCase() === q.correctAnswer.toLowerCase());
+                if (q.id === 'q12') {
+                    // Custom logic for Q12: Must start with a capital letter, contain 'blue', and end with a full stop
+                    const trimmedAnswer = userAnswer.trim();
+                    isCorrect = trimmedAnswer.length > 0 &&
+                                trimmedAnswer[0] === trimmedAnswer[0].toUpperCase() &&
+                                /[A-Z]/.test(trimmedAnswer[0]) && // Ensure the first char is an actual letter
+                                trimmedAnswer.toLowerCase().includes('blue') &&
+                                trimmedAnswer.endsWith('.');
+                } else {
+                    isCorrect = userAnswer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
+                }
             } else if (q.type === 'number') {
-                // For number answers, convert to number for comparison
-                isCorrect = (parseFloat(userAnswer) === q.correctAnswer);
+                isCorrect = parseInt(userAnswer) === q.correctAnswer;
             }
 
-            // Detailed results for email
-            let outcomeClass = isCorrect ? 'correct' : 'incorrect';
-            let outcomeText = isCorrect ? 'Correct' : 'Incorrect';
-            if (userAnswer === '') {
-                outcomeText = 'No Answer';
-                outcomeClass = ''; // No specific outcome class for no answer
-            }
-
-            // Add to total score if correct
             if (isCorrect) {
-                score += 1;
+                score++;
                 questionScore = 1;
             }
 
-            // Build HTML content for email (detailed results)
+            // Prepare HTML results (for email) based on the provided sample
             resultsHtmlEmailContent += `
                 <div class="question-item">
-                    <h4>Q${index + 1}. ${escapeHtml(q.topicHeading)}</h4>
-                    <p><strong>Question:</strong> ${escapeHtml(q.question)}</p>
-                    <p><strong>Your Answer:</strong> ${escapeHtml(userAnswerDisplay)}</p>
-                    ${q.correctAnswerDisplay ? `<p><strong>Correct Answer:</strong> ${escapeHtml(q.correctAnswerDisplay)}</p>` : ''}
-                    ${explanation ? `<p><strong>Explanation:</strong> ${escapeHtml(explanation)}</p>` : ''}
-                    <p><strong>Score:</strong> ${questionScore}/${1}</p>
-                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${outcomeText}</span></p>
+                    <h4>Q${index + 1}. ${q.topicHeading}</h4>
+                    <p>${q.question}</p> <p><strong>Your Answer:</strong> ${userAnswerDisplay}</p>
+                    <p><strong>Correct Answer:</strong> ${q.correctAnswerDisplay || q.correctAnswer}</p>
+                    <p><strong>Score:</strong> ${questionScore}/1</p>
+                    <p><strong>Outcome:</strong> <span class="${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Correct' : 'Incorrect'}</span></p>
+                    ${explanation ? `<p>Explanation: ${explanation}</p>` : ''}
                 </div>
             `;
 
-            // Build plain text content for email (detailed results)
-            resultsTextContent += `
-Q${index + 1}. ${q.topicHeading}
-  Question: ${q.question}
-  Your Answer: ${userAnswerDisplay}
-  ${q.correctAnswerDisplay ? `Correct Answer: ${q.correctAnswerDisplay}` : ''}
-  ${explanation ? `Explanation: ${explanation}` : ''}
-  Score: ${questionScore}/1
-  Outcome: ${outcomeText}
---------------------
-            `;
+            // Prepare Plain Text results (for email)
+            resultsTextContent += `\nQuestion ${index + 1}: ${q.topicHeading} - ${q.question}\n`;
+            resultsTextContent += `Your Answer: ${userAnswerDisplay} (${isCorrect ? 'Correct' : 'Incorrect'})\n`;
+            resultsTextContent += `Correct Answer: ${q.correctAnswerDisplay || q.correctAnswer}\n`;
+            if (explanation) {
+                resultsTextContent += `Explanation: ${explanation}\n`;
+            }
         });
 
-        // Determine overall outcome text
-        let overallOutcomeText = "";
+        // ONLY SHOW SUMMARY ON RESULTS PAGE
+        detailedResultsDiv.innerHTML = `<p>${CUSTOM_CONTENT.resultsEmailMessage}</p>`; // Display custom message
+        overallScoreElement.textContent = `Overall Score: ${score}/${questions.length}`;
+
+        let overallExpectations = '';
+        let expectationsClass = ''; // To apply correct CSS class in email
         if (score < scoreThresholds.below) {
-            overallOutcomeText = CUSTOM_CONTENT.expectationsBelow + " (Needs more practice)";
+            overallExpectations = CUSTOM_CONTENT.expectationsBelow;
+            expectationsClass = 'expectation-below';
         } else if (score >= scoreThresholds.meets) {
-            overallOutcomeText = CUSTOM_CONTENT.expectationsAbove + " (Excellent understanding)";
+            overallExpectations = CUSTOM_CONTENT.expectationsAbove;
+            expectationsClass = 'expectation-above';
         } else {
-            overallOutcomeText = CUSTOM_CONTENT.expectationsMeets + " (Good understanding)";
+            overallExpectations = CUSTOM_CONTENT.expectationsMeets;
+            expectationsClass = 'expectation-meets';
+        }
+        overallExpectationsElement.textContent = `Overall Performance: ${overallExpectations}`;
+
+        // Add auto-submit message if applicable
+        if (assessmentSubmittedByTime) {
+            const autoSubmitMessage = document.createElement('p');
+            autoSubmitMessage.textContent = CUSTOM_CONTENT.timeUpMessage;
+            autoSubmitMessage.style.color = '#dc3545'; // Red for emphasis
+            autoSubmitMessage.style.fontWeight = 'bold';
+            overallScoreElement.parentNode.insertBefore(autoSubmitMessage, overallScoreElement.nextSibling);
         }
 
-        // Display overall score and expectations on the results page
-        overallScoreElement.innerHTML = `<h3>Overall Score: ${score}/${questions.length}</h3>`;
-        overallExpectationsElement.innerHTML = `<h3>Overall Outcome: <span class="${overallOutcomeText.includes('Below') ? 'expectation-below' : overallOutcomeText.includes('Above') ? 'expectation-above' : 'expectation-meets'}">${overallOutcomeText}</span></h3>`;
+        // Store results for emailing
+        assessmentTextResults = `
+Child's Name: ${childName}
+Parent's Name: ${parentName}
+Parent's Email: ${parentEmail}
 
-        // Add overall score and outcome to email content
-        resultsHtmlEmailContent += `
-            <div class="score-summary">
-                <h3>Overall Score: ${score}/${questions.length}</h3>
-                <h3>Overall Outcome: <span class="${overallOutcomeText.includes('Below') ? 'expectation-below' : overallOutcomeText.includes('Above') ? 'expectation-above' : 'expectation-meets'}">${overallOutcomeText}</span></h3>
-            </div>
+Overall Score: ${score}/${questions.length}
+Overall Performance: ${overallExpectations}
+
+${resultsTextContent}
         `;
-        resultsTextContent += `\nOverall Score: ${score}/${questions.length}\nOverall Outcome: ${overallOutcomeText}\n`;
 
+        // Full HTML for email based on provided sample
+        assessmentHtmlResults = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+    h2, h3, h4 { color: #0056b3; }
+    .question-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+    .question-item:last-child { border-bottom: none; }
+    .score-summary { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #007bff; }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    .expectation-meets { color: #28a745; font-weight: bold; }
+    .expectation-below { color: #dc3545; font-weight: bold; }
+    .expectation-above { color: #007bff; font-weight: bold; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h2>${CURRENT_KEY_STAGE} Assessment Results for ${childName}</h2>
+        <p><strong>Parent Name:</strong> ${parentName}</p>
+        <p><strong>Parent Email:</strong> ${parentEmail}</p>
+        <p><strong>Overall Score:</strong> ${score}/${questions.length}</p>
+        <p><strong>Overall Performance:</strong> <span class="${expectationsClass}">${overallExpectations}</span></p>
+        ${assessmentSubmittedByTime ? `<p style="color:#dc3545;font-weight:bold;">${CUSTOM_CONTENT.timeUpMessage}</p>` : ''}
+        
+        ${resultsHtmlEmailContent} <div class="score-summary">
+            <h3>Overall Score: ${score}/${questions.length}</h3>
+            <h3>Overall Outcome: <span class="${expectationsClass}">${overallExpectations}</span></h3>
+        </div>
+        <p>If you have any questions, please reply to this email.</p>
+        <p>Best regards,<br>Mona Teaches</p>
+    </div>
+</body>
+</html>
+        `;
 
-        // Save submission to database
+        // Immediately send results email and save to DB
+        sendEmail(parentName, childName, parentEmail, assessmentTextResults, assessmentHtmlResults);
+        saveSubmission(parentName, childName, parentEmail, score, overallExpectations, userAnswers);
+    }
+
+    // Send email function
+    async function sendEmail(parentName, childName, parentEmail, resultsText, resultsHtml) {
+        emailStatus.textContent = CUSTOM_CONTENT.emailSending;
+        emailStatus.style.color = '#007bff'; // Blue for sending
+
         try {
-            const response = await fetch('/.netlify/functions/save-submission', {
+            const response = await fetch('/.netlify/functions/send-email', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     parentName: parentName,
                     childName: childName,
                     parentEmail: parentEmail,
-                    score: score, // Send the numerical score
-                    expectations: overallOutcomeText, // Send the plain text outcome
-                    detailedResults: {
-                        html: resultsHtmlEmailContent,
-                        plain: resultsTextContent,
-                        overallScore: `${score}/${questions.length}`,
-                        overallOutcome: overallOutcomeText
-                    },
-                    totalQuestions: questions.length
-                })
+                    resultsText: resultsText, // Pass plain text results
+                    resultsHtml: resultsHtml,
+                    keyStage: CURRENT_KEY_STAGE  // Pass HTML results
+                }),
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (response.ok) {
+                emailStatus.textContent = CUSTOM_CONTENT.emailSentSuccess;
+                emailStatus.style.color = '#28a745'; // Green for success
+            } else {
+                const errorData = await response.json();
+                console.error('Error sending email:', errorData.message);
+                emailStatus.textContent = `${CUSTOM_CONTENT.emailFailed}: ${errorData.message || 'Server error'}`;
+                emailStatus.style.color = '#dc3545'; // Red for error
             }
-
-            const result = await response.json();
-            console.log('Submission saved:', result);
         } catch (error) {
-            console.error('Error saving submission:', error);
-            // Optionally, show an error message to the user
-        }
-
-        // --- Email Sending Logic ---
-        // Escape HTML for email subject if needed (e.g., from childName)
-        const emailSubjectChildName = escapeHtml(childName);
-        const emailOverallScore = `${score}/${questions.length}`;
-        const emailOverallOutcome = overallOutcomeText;
-
-        const emailRequestBody = {
-            parentName: parentName,
-            childName: emailSubjectChildName,
-            parentEmail: parentEmail,
-            subject: `${CURRENT_KEY_STAGE} Assessment Results for ${emailSubjectChildName} - Score: ${emailOverallScore}`,
-            detailedResultsHtml: resultsHtmlEmailContent,
-            overallScore: emailOverallScore, // This is for email template
-            overallOutcome: emailOverallOutcome, // This is for email template
-            resultsEmailMessage: CUSTOM_CONTENT.resultsEmailMessage // Pass custom message
-        };
-
-        const sendEmailBtn = document.getElementById('sendEmailBtn');
-        sendEmailBtn.style.display = 'block'; // Show the send email button
-
-        sendEmailBtn.onclick = async () => {
-            emailStatus.textContent = CUSTOM_CONTENT.emailSending; // Show sending message
-            emailStatus.style.color = '#0056b3'; // Blue for sending
-            sendEmailBtn.disabled = true; // Disable button while sending
-
-            try {
-                const emailResponse = await fetch('/.netlify/functions/send-email', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(emailRequestBody)
-                });
-
-                if (emailResponse.ok) {
-                    emailStatus.textContent = CUSTOM_CONTENT.emailSentSuccess;
-                    emailStatus.style.color = 'green';
-                } else {
-                    const errorData = await emailResponse.json();
-                    throw new Error(errorData.message || 'Failed to send email.');
-                }
-            } catch (error) {
-                console.error('Error sending email:', error);
-                emailStatus.textContent = CUSTOM_CONTENT.emailFailed;
-                emailStatus.style.color = 'red';
-            } finally {
-                sendEmailBtn.disabled = false; // Re-enable button after attempt
-            }
-        };
-
-        // If the assessment was auto-submitted by time, automatically send the email.
-        if (assessmentSubmittedByTime) {
-            sendEmailBtn.click(); // Programmatically click the send email button
+            console.error('Network or unexpected error:', error);
+            emailStatus.textContent = `${CUSTOM_CONTENT.networkError}`;
+            emailStatus.style.color = '#dc3545'; // Red for error
         }
     }
 
-    // Escape HTML for safe display
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.appendChild(document.createTextNode(text));
-        return div.innerHTML;
-    }
+    // Save submission to database function
+	async function saveSubmission(parentName, childName, parentEmail, score, expectations, userAnswers) {
+		const totalQuestions = questions.length; // Add this line
+		try {
+			const response = await fetch('/.netlify/functions/save-submission', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					parentName,
+					childName,
+					parentEmail,
+					score,
+					expectations,
+					detailedResults: userAnswers,
+					totalQuestions: totalQuestions // Add this line
+				}),
+			});
+			// ... rest of your saveSubmission function
+		} catch (error) {
+			// ...
+		}
+	}
 
     // --- Event Listeners ---
 
     // Info Form Submission
-    infoForm.addEventListener('submit', (e) => {
+    infoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // Store user info
+        // Save user info
         parentName = document.getElementById('parentName').value;
         childName = document.getElementById('childName').value;
         parentEmail = document.getElementById('parentEmail').value;
 
-        infoCollectionDiv.style.display = 'none'; // Hide info collection
-        assessmentSectionDiv.style.display = 'block'; // Show assessment section
+        infoCollectionDiv.style.display = 'none';
+        assessmentSectionDiv.style.display = 'block';
 
-        // Initialize and display first question
-        currentQuestionIndex = 0;
         showQuestion(currentQuestionIndex);
-        startTimer(); // Start the assessment timer
+        startTimer();
     });
 
-    // Start Assessment button (controlled by Turnstile)
-    // Initially disabled
-    startAssessmentBtn.disabled = true;
-
-    // Callback functions for Cloudflare Turnstile
-    window.onloadTurnstileCallback = function() {
-        // This callback is fired once the Turnstile widget is ready.
-        // You might want to enable the button here if you don't need server-side verification,
-        // or keep it disabled until verification token is successfully processed.
-        // For server-side verification, enable the button in the 'turnstileSuccessCallback'
-    };
-
-    window.turnstileSuccessCallback = function(token) {
+    // Cloudflare Turnstile Callback
+    window.turnstileCallback = function(token) {
         // Verify token server-side (optional but recommended)
         fetch('/.netlify/functions/verify-turnstile', {
             method: 'POST',
