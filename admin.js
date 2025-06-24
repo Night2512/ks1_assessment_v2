@@ -300,8 +300,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(errorData.message || `Failed to fetch detailed results for ID ${id}.`);
             }
 
-            const detailedResults = await response.json();
-            renderDetailedResults(detailedResults);
+            let detailedResults = await response.json(); // This could be an object or an array
+
+            let resultsToRender = [];
+            if (typeof detailedResults === 'object' && detailedResults !== null && !Array.isArray(detailedResults)) {
+                // If it's an object like {"q1": "b", "q2": "c"}
+                for (const key in detailedResults) {
+                    if (detailedResults.hasOwnProperty(key)) {
+                        resultsToRender.push({
+                            question: key.toUpperCase(), // e.g., Q1, Q2
+                            user_answer: detailedResults[key],
+                            // Default values for fields not present in this format
+                            correct_answer: 'N/A',
+                            score: 'N/A',
+                            max_score: 'N/A',
+                            outcome: 'Not available'
+                        });
+                    }
+                }
+            } else if (Array.isArray(detailedResults)) {
+                // If it's already the intended full array format
+                resultsToRender = detailedResults;
+            }
+            // If detailedResults is null or other unexpected type, resultsToRender will remain empty
+
+            renderDetailedResults(resultsToRender);
 
         } catch (error) {
             console.error('Error fetching detailed results:', error);
@@ -310,44 +333,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderDetailedResults(results) {
-        // --- FIX: Added Array.isArray check ---
         if (!Array.isArray(results) || results.length === 0) {
-            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission, or data is in an unexpected format.</p>';
-            // You can add a console.warn here for debugging if needed:
-            // console.warn('Detailed results were not an array or were empty:', results);
-            return;
-        }
-
-        let html = '';
-        results.forEach((item, index) => {
-            const outcomeClass = item.outcome === 'Correct' ? 'correct' : 'incorrect';
-            html += `
-                <div class="question-item">
-                    <h4>Q${index + 1}. ${item.question}</h4>
-                    <p><strong>Your Answer:</strong> ${item.user_answer}</p>
-                    <p><strong>Correct Answer:</strong> ${item.correct_answer}</p>
-                    <p><strong>Score:</strong> ${item.score}/${item.max_score}</p>
-                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${item.outcome}</span></p>
-                </div>
-            `;
-        });
-        detailedResultsContent.innerHTML = html;
-    }
-
-    function closeModal() {
-        detailsModal.style.display = 'none';
-        detailedResultsContent.innerHTML = '';
-    }
-
-    // Close modal listeners
-    closeModalBtn.addEventListener('click', closeModal);
-    closeSpanButton.addEventListener('click', closeModal);
-    window.addEventListener('click', (event) => {
-        if (event.target === detailsModal) {
-            closeModal();
-        }
-    });
-
-    // Initial check on page load
-    checkAuth();
-});
+            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission, or data could not be parsed into a displayable format.</p
