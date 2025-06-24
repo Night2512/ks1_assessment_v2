@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const submissionsTableBody = document.querySelector('#submissionsTable tbody');
     const loadingMessage = document.getElementById('loadingMessage');
     const errorMessage = document.getElementById('errorMessage');
-    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutBtn = document = document.getElementById('logoutBtn');
     const filterChildNameInput = document.getElementById('filterChildName');
     const filterParentEmailInput = document.getElementById('filterParentEmail');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Key for storing the password in localStorage after successful login
     const ADMIN_PASSWORD_STORAGE_KEY = 'adminAuthPassword';
 
-    // --- HELPER FUNCTION: Escape HTML characters ---
+    // --- HELPER FUNCTION: Escape HTML characters (updated to escape backticks) ---
     function escapeHtml(unsafe) {
         if (typeof unsafe !== 'string') {
             return unsafe; // Return as-is if not a string (e.g., number, null, undefined)
@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;"); // Use &#039; for single quotes
+            .replace(/'/g, "&#039;")
+            .replace(/`/g, "&#96;"); // NEW: Escape backticks
     }
     // --- END HELPER FUNCTION ---
 
@@ -180,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.insertCell().textContent = submission.child_name;
             row.insertCell().textContent = submission.parent_name;
             row.insertCell().textContent = submission.parent_email;
-            row.insertCell().textContent = `${submission.score}/${submission.total_questions || 'N/A'}`;
+            row.insertCell().textContent = `<span class="math-inline">\{submission\.score\}/</span>{submission.total_questions || 'N/A'}`;
             row.insertCell().textContent = submission.expectations;
             
             const actionsCell = row.insertCell();
@@ -363,8 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4>${escapeHtml(item.question || `Question ${index + 1}`)}</h4>
                     <p><strong>Your Answer:</strong> ${escapeHtml(item.user_answer || 'N/A')}</p>
                     ${item.correct_answer && item.correct_answer !== 'N/A' ? `<p><strong>Correct Answer:</strong> ${escapeHtml(item.correct_answer)}</p>` : ''}
-                    ${item.score && item.score !== 'N/A' ? `<p><strong>Score:</strong> <span class="math-inline">\{escapeHtml\(item\.score\)\}</span>{item.max_score && item.max_score !== 'N/A' ? `/${escapeHtml(item.max_score)}` : ''}</p>` : ''}
-                    ${item.outcome && item.outcome !== 'Not available' ? `<p><strong>Outcome:</strong> <span class="<span class="math-inline">\{outcomeClass\}"\></span>{escapeHtml(item.outcome)}</span></p>` : ''}
+                    ${item.score && item.score !== 'N/A' ? `<p><strong>Score:</strong> ${escapeHtml(item.score)}${item.max_score && item.max_score !== 'N/A' ? `/${escapeHtml(item.max_score)}` : ''}</p>` : ''}
+                    ${item.outcome && item.outcome !== 'Not available' ? `<p><strong>Outcome:</strong> <span class="${outcomeClass}">${escapeHtml(item.outcome)}</span></p>` : ''}
                 </div>
             `;
         });
