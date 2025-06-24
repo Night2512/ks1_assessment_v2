@@ -13,6 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFilterBtn = document.getElementById('applyFilterBtn');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
+    // Modal elements
+    const detailsModal = document.getElementById('detailsModal');
+    const closeButton = document.querySelector('.close-button');
+    const modalDetailsContent = document.getElementById('modalDetailsContent');
+
     // Key for storing the password in localStorage after successful login
     const ADMIN_PASSWORD_STORAGE_KEY = 'adminAuthPassword';
 
@@ -170,6 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.className = 'delete-btn';
             deleteBtn.dataset.id = submission.id; // Store submission ID
             actionsCell.appendChild(deleteBtn);
+
+            const viewDetailsBtn = document.createElement('button');
+            viewDetailsBtn.textContent = 'View Details';
+            viewDetailsBtn.className = 'view-details-btn'; // Add a class for identification
+            viewDetailsBtn.dataset.id = submission.id; // Store submission ID
+            actionsCell.appendChild(viewDetailsBtn);
         });
     }
 
@@ -204,6 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const submissionId = event.target.dataset.id;
             if (confirm(`Are you sure you want to delete submission ID ${submissionId}? This action cannot be undone.`)) {
                 await deleteSubmission(submissionId);
+            }
+        } else if (event.target.classList.contains('view-details-btn')) { // Handle View Details button click
+            const submissionId = parseInt(event.target.dataset.id);
+            const submission = allSubmissions.find(s => s.id === submissionId);
+            if (submission && submission.detailed_results) {
+                renderDetailedResultsInModal(submission.detailed_results);
+            } else {
+                alert('Detailed results not found for this submission.');
             }
         }
     });
@@ -252,6 +271,40 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingMessage.style.display = 'none';
         }
     }
+
+    // --- Details Modal Logic ---
+    function renderDetailedResultsInModal(detailedResultsString) {
+        let detailsHtml = '<p>No detailed results available.</p>';
+        try {
+            const results = JSON.parse(detailedResultsString);
+            if (results && typeof results === 'object') {
+                detailsHtml = '<ul>';
+                for (const key in results) {
+                    if (Object.hasOwnProperty.call(results, key)) {
+                        const value = results[key];
+                        detailsHtml += `<li><strong>${key.toUpperCase()}</strong>: ${value === "" ? "No Answer" : value}</li>`;
+                    }
+                }
+                detailsHtml += '</ul>';
+            }
+        } catch (e) {
+            console.error("Error parsing detailed results JSON:", e);
+            detailsHtml = '<p class="error-message">Error loading detailed results format.</p>';
+        }
+        modalDetailsContent.innerHTML = detailsHtml;
+        detailsModal.style.display = 'block'; // Show the modal
+    }
+
+    closeButton.addEventListener('click', () => {
+        detailsModal.style.display = 'none'; // Hide the modal
+    });
+
+    // Close the modal if the user clicks outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === detailsModal) {
+            detailsModal.style.display = 'none';
+        }
+    });
 
     // Initial check on page load
     checkAuth();

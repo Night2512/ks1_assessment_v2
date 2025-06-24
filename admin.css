@@ -1,165 +1,86 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    line-height: 1.6;
-    margin: 0;
+/* admin.css additions for modal */
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto; /* 10% from the top and centered */
     padding: 20px;
-}
-
-.admin-container {
-    max-width: 1000px;
-    margin: 20px auto;
-    background: #fff;
-    padding: 30px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 700px; /* Max width for readability */
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    position: relative;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
 }
 
-h1, h2 {
-    color: #0056b3;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-#authSection {
-    text-align: center;
-    padding: 30px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    max-width: 400px;
-    margin: 50px auto;
-    background-color: #f9f9f9;
-}
-
-#authSection input[type="password"] {
-    width: calc(100% - 22px);
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-#authSection button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-}
-
-#authSection button:hover {
-    background-color: #0056b3;
-}
-
-.error-message {
-    color: red;
-    margin-top: 10px;
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
     font-weight: bold;
 }
 
-#loadingMessage {
-    text-align: center;
-    font-style: italic;
-    color: #555;
-}
-
-.dashboard-controls {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: #f0f8ff; /* Light blue background for controls */
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-}
-
-.dashboard-controls input[type="text"] {
-    flex: 1; /* Allows inputs to grow */
-    min-width: 150px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.dashboard-controls button {
-    background-color: #28a745; /* Green for apply */
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
     cursor: pointer;
-    font-size: 0.9em;
-    margin-top: 0; /* Override default button margin */
 }
 
-.dashboard-controls button:hover {
-    background-color: #218838;
+#modalDetailsContent ul {
+    list-style: none;
+    padding: 0;
 }
 
-#clearFiltersBtn {
-    background-color: #6c757d; /* Grey for clear */
+#modalDetailsContent li {
+    margin-bottom: 5px;
+    padding: 3px 0;
+    border-bottom: 1px dashed #eee;
 }
 
-#clearFiltersBtn:hover {
-    background-color: #5a6268;
+#modalDetailsContent li:last-child {
+    border-bottom: none;
 }
 
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+/* Add some margin to the new button */
+.view-details-btn {
+    margin-left: 5px;
 }
 
-table th, table td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: left;
-}
-
-table th {
-    background-color: #0056b3;
-    color: white;
-    font-weight: bold;
-}
-
-table tbody tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-table tbody tr:hover {
-    background-color: #e9e9e9;
-}
-
-.delete-btn {
-    background-color: #dc3545; /* Red for delete */
-    color: white;
+/* Ensure buttons have some styling */
+.delete-btn, .view-details-btn {
     padding: 5px 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.8em;
-    margin: 0; /* Remove default button margins */
+    font-size: 0.9em;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
 }
 
 .delete-btn:hover {
     background-color: #c82333;
 }
 
-#logoutBtn {
-    background-color: #6c757d;
-    margin-top: 30px;
-    display: block; /* Make it block to center */
-    margin-left: auto;
-    margin-right: auto;
+.view-details-btn {
+    background-color: #007bff;
+    color: white;
 }
 
-#logoutBtn:hover {
-    background-color: #5a6268;
+.view-details-btn:hover {
+    background-color: #0056b3;
 }
