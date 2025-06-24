@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFilterBtn = document.getElementById('applyFilterBtn');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-    // NEW: Modal elements
+    // Modal elements
     const detailsModal = document.getElementById('detailsModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const closeSpanButton = document.querySelector('.close-button');
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Data Fetching and Display Logic ---
 
     let allSubmissions = [];
-
+    
     async function fetchSubmissions() {
         loadingMessage.style.display = 'block';
         errorMessage.style.display = 'none';
@@ -145,13 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function displaySubmissions(submissionsToDisplay) {
         submissionsTableBody.innerHTML = '';
         if (submissionsToDisplay.length === 0) {
-            submissionsTableBody.innerHTML = '<tr><td colspan="8">No submissions found.</td></tr>'; // Updated colspan
+            submissionsTableBody.innerHTML = '<tr><td colspan="8">No submissions found.</td></tr>';
             return;
         }
 
         submissionsToDisplay.forEach(submission => {
             const row = submissionsTableBody.insertRow();
-
+            
             const submissionDate = new Date(submission.submission_time);
             const formattedDate = submissionDate.toLocaleString('en-GB', {
                 year: 'numeric',
@@ -165,9 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
             row.insertCell().textContent = submission.child_name;
             row.insertCell().textContent = submission.parent_name;
             row.insertCell().textContent = submission.parent_email;
-            row.insertCell().textContent = `<span class="math-inline">\{submission\.score\}/</span>{submission.total_questions || 'N/A'}`;
+            row.insertCell().textContent = `${submission.score}/${submission.total_questions || 'N/A'}`;
             row.insertCell().textContent = submission.expectations;
-
+            
             const actionsCell = row.insertCell();
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = 'Delete';
@@ -175,12 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.dataset.id = submission.id;
             actionsCell.appendChild(deleteBtn);
 
-            // NEW: Details button cell
             const detailsCell = row.insertCell();
             const viewDetailsBtn = document.createElement('button');
             viewDetailsBtn.textContent = 'View Details';
-            viewDetailsBtn.className = 'view-details-btn'; // Add a class for styling/targeting
-            viewDetailsBtn.dataset.id = submission.id; // Store submission ID
+            viewDetailsBtn.className = 'view-details-btn';
+            viewDetailsBtn.dataset.id = submission.id;
             detailsCell.appendChild(viewDetailsBtn);
         });
     }
@@ -205,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearFilters() {
         filterChildNameInput.value = '';
         filterParentEmailInput.value = '';
-        displaySubmissions(allSubmissions); // Show all again
+        displaySubmissions(allSubmissions);
     }
 
 
@@ -218,7 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 await deleteSubmission(submissionId);
             }
         }
-        // NEW: Handle View Details button click
         if (event.target.classList.contains('view-details-btn')) {
             const submissionId = event.target.dataset.id;
             await fetchAndDisplayDetailedResults(submissionId);
@@ -270,11 +268,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- NEW: Detailed Results Modal Logic ---
+    // --- Detailed Results Modal Logic ---
 
     async function fetchAndDisplayDetailedResults(id) {
         detailedResultsContent.innerHTML = 'Loading detailed results...';
-        detailsModal.style.display = 'block'; // Show modal immediately
+        detailsModal.style.display = 'block';
 
         const token = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
         if (!token) {
@@ -312,8 +310,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderDetailedResults(results) {
-        if (!results || results.length === 0) {
-            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission.</p>';
+        // --- FIX: Added Array.isArray check ---
+        if (!Array.isArray(results) || results.length === 0) {
+            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission, or data is in an unexpected format.</p>';
+            // You can add a console.warn here for debugging if needed:
+            // console.warn('Detailed results were not an array or were empty:', results);
             return;
         }
 
@@ -325,8 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4>Q${index + 1}. ${item.question}</h4>
                     <p><strong>Your Answer:</strong> ${item.user_answer}</p>
                     <p><strong>Correct Answer:</strong> ${item.correct_answer}</p>
-                    <p><strong>Score:</strong> <span class="math-inline">\{item\.score\}/</span>{item.max_score}</p>
-                    <p><strong>Outcome:</strong> <span class="<span class="math-inline">\{outcomeClass\}"\></span>{item.outcome}</span></p>
+                    <p><strong>Score:</strong> ${item.score}/${item.max_score}</p>
+                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${item.outcome}</span></p>
                 </div>
             `;
         });
@@ -335,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function closeModal() {
         detailsModal.style.display = 'none';
-        detailedResultsContent.innerHTML = ''; // Clear content when closing
+        detailedResultsContent.innerHTML = '';
     }
 
     // Close modal listeners
