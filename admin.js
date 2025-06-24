@@ -267,8 +267,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(errorData.message || 'Failed to fetch detailed results.');
             }
 
-            const detailedResults = await response.json();
-            renderDetailedResults(detailedResults);
+            const results = await response.json(); // This 'results' is the detailed_results from the backend
+            console.log("Fetched detailed results:", results); // Debugging line
+
+            // Convert the object of results into an array of values if it's an object
+            // This handles cases where detailed_results might be stored as { "Q1": {}, "Q2": {} }
+            const resultsArray = Array.isArray(results) ? results : Object.values(results);
+
+            renderDetailedResults(resultsArray); // Pass the array to the rendering function
 
         } catch (error) {
             console.error('Error fetching detailed results:', error);
