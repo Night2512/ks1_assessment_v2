@@ -13,32 +13,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFilterBtn = document.getElementById('applyFilterBtn');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-    // IMPORTANT: In a real production environment, for better security,
-    // you should hash this password on the server-side and compare hashes.
-    // For this demonstration, we're using a simple shared secret.
-    const FRONTEND_PASSWORD = "YOUR_FRONTEND_PASSWORD_HERE"; // This will be replaced by Netlify Env Var via build process (Netlify Functions use process.env, frontend needs to be set up)
-                                                          // For now, hardcode if testing locally, but it will be replaced by a build step or similar.
-
-    // A simpler way to manage this on the frontend without exposing it directly in source:
-    // In Netlify build settings, you can define a build environment variable (e.g., REACT_APP_FRONTEND_PASSWORD for React,
-    // or inject it into a global JS variable during build for vanilla JS).
-    // For direct use in vanilla JS, you'd typically have a build step that replaces a placeholder or generates this file.
-    // For this example, we'll assume a direct client-side comparison, which is NOT ideal for production.
-    // For proper security, the password check should primarily happen server-side via the Netlify Function.
-    // The current Netlify Functions (get-submissions, delete-submission) *do* perform server-side checks.
-    // This client-side check is primarily for initial UI access control.
-
-    const ADMIN_TOKEN_KEY = 'adminAuthToken'; // Key for localStorage
+    // Key for storing the password in localStorage after successful login
+    const ADMIN_PASSWORD_STORAGE_KEY = 'adminAuthPassword';
 
     // --- Authentication Logic ---
 
-    function checkAuth() {
-        const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-        if (token === FRONTEND_PASSWORD) { // Simple token comparison
-            showDashboard();
-        } else {
-            showAuthSection();
+    async function checkAuth() {
+        const storedPassword = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
+        if (storedPassword) {
+            // Attempt to re-authenticate with the stored password via the server
+            // This acts as a basic session check. If the password is still valid, show dashboard.
+            try {
+                const response = await fetch('/.netlify/functions/admin-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: storedPassword })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showDashboard();
+                    return;
+                }
+            } catch (error) {
+                console.error("Failed to re-authenticate with stored password:", error);
+            }
         }
+        showAuthSection(); // If no stored password or re-auth fails, show login
     }
 
     function showAuthSection() {
@@ -54,19 +55,40 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchSubmissions(); // Load data when dashboard is shown
     }
 
-    loginBtn.addEventListener('click', () => {
+    loginBtn.addEventListener('click', async () => {
         const enteredPassword = adminPasswordInput.value;
-        if (enteredPassword === FRONTEND_PASSWORD) {
-            localStorage.setItem(ADMIN_TOKEN_KEY, FRONTEND_PASSWORD); // Store a "token"
-            showDashboard();
-        } else {
-            authMessage.textContent = 'Incorrect password.';
+        authMessage.textContent = 'Authenticating...';
+        authMessage.style.color = '#007bff';
+
+        try {
+            const response = await fetch('/.netlify/functions/admin-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: enteredPassword })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                localStorage.setItem(ADMIN_PASSWORD_STORAGE_KEY, enteredPassword); // Store the entered password
+                authMessage.textContent = 'Login successful!';
+                authMessage.style.color = 'green';
+                setTimeout(showDashboard, 500); // Give user time to see success message
+            } else {
+                authMessage.textContent = data.message || 'Incorrect password.';
+                authMessage.style.color = 'red';
+                adminPasswordInput.value = '';
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            authMessage.textContent = 'An error occurred during login. Please try again.';
+            authMessage.style.color = 'red';
             adminPasswordInput.value = '';
         }
     });
 
     logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(ADMIN_PASSWORD_STORAGE_KEY);
         showAuthSection();
     });
 
@@ -79,11 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage.style.display = 'none';
         submissionsTableBody.innerHTML = ''; // Clear existing table rows
 
+        const token = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
+        if (!token) { // Should not happen if checkAuth works, but as a safeguard
+            authMessage.textContent = 'Authentication token missing. Please log in.';
+            showAuthSection();
+            return;
+        }
+
         try {
-            const token = localStorage.getItem(ADMIN_TOKEN_KEY);
             const response = await fetch('/.netlify/functions/get-submissions', {
                 headers: {
-                    'Authorization': `Bearer ${token}` // Send the token
+                    'Authorization': `Bearer ${token}` // Send the stored password as a token
                 }
             });
 
@@ -133,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.insertCell().textContent = submission.child_name;
             row.insertCell().textContent = submission.parent_name;
             row.insertCell().textContent = submission.parent_email;
-            row.insertCell().textContent = `${submission.score}/${submission.total_questions || 30}`; // Assume 30 if total_questions not available
+            row.insertCell().textContent = `${submission.score}/${submission.total_questions || 'N/A'}`; // Use N/A if total_questions is missing
             row.insertCell().textContent = submission.expectations;
             
             const actionsCell = row.insertCell();
@@ -185,13 +213,19 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingMessage.style.display = 'block';
         errorMessage.style.display = 'none';
 
+        const token = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
+        if (!token) {
+            authMessage.textContent = 'Authentication token missing. Please log in.';
+            showAuthSection();
+            return;
+        }
+
         try {
-            const token = localStorage.getItem(ADMIN_TOKEN_KEY);
             const response = await fetch('/.netlify/functions/delete-submission', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Send the token
+                    'Authorization': `Bearer ${token}` // Send the stored password as a token
                 },
                 body: JSON.stringify({ id: parseInt(id) }) // Send ID as a number
             });

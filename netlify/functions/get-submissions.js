@@ -7,7 +7,7 @@ let conn;
 async function getDbConnection() {
   if (!conn) {
     conn = new Pool({
-      connectionString: process.env.NETLIFY_DATABASE_URL, // Using the corrected env var
+      connectionString: process.env.NETLIFY_DATABASE_URL, // Corrected env var
       ssl: {
         rejectUnauthorized: false, // Required for NeonDB due to self-signed certs or specific configurations
       },
@@ -17,9 +17,11 @@ async function getDbConnection() {
 }
 
 exports.handler = async (event, context) => {
-  // Basic Authentication (using FRONTEND_PASSWORD for simplicity as requested)
+  // Basic Authentication (validating against FRONTEND_PASSWORD from env vars)
   const authHeader = event.headers.authorization;
-  if (!authHeader || authHeader !== `Bearer ${process.env.FRONTEND_PASSWORD}`) {
+  const expectedPassword = process.env.FRONTEND_PASSWORD;
+
+  if (!authHeader || !expectedPassword || authHeader !== `Bearer ${expectedPassword}`) {
     return {
       statusCode: 401,
       body: JSON.stringify({ message: 'Unauthorized' }),
