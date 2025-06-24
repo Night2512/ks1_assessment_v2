@@ -11,7 +11,7 @@ exports.handler = async (event, context) => {
         return { statusCode: 400, body: JSON.stringify({ success: false, message: 'Turnstile token missing.' }) };
     }
 
-    const CLOUDFLARE_SECRET_KEY = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEYS; // Use the provided env var name
+    const CLOUDFLARE_SECRET_KEY = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY; // Use the provided env var name
 
     if (!CLOUDFLARE_SECRET_KEY) {
         console.error('Cloudflare Turnstile secret key is not set in environment variables.');
