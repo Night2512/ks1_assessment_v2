@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFilterBtn = document.getElementById('applyFilterBtn');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
+    // NEW: Modal elements
+    const detailsModal = document.getElementById('detailsModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const closeSpanButton = document.querySelector('.close-button');
+    const detailedResultsContent = document.getElementById('detailedResultsContent');
+
+
     // Key for storing the password in localStorage after successful login
     const ADMIN_PASSWORD_STORAGE_KEY = 'adminAuthPassword';
 
@@ -21,8 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkAuth() {
         const storedPassword = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
         if (storedPassword) {
-            // Attempt to re-authenticate with the stored password via the server
-            // This acts as a basic session check. If the password is still valid, show dashboard.
             try {
                 const response = await fetch('/.netlify/functions/admin-auth', {
                     method: 'POST',
@@ -39,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Failed to re-authenticate with stored password:", error);
             }
         }
-        showAuthSection(); // If no stored password or re-auth fails, show login
+        showAuthSection();
     }
 
     function showAuthSection() {
@@ -52,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showDashboard() {
         authSection.style.display = 'none';
         dashboardContent.style.display = 'block';
-        fetchSubmissions(); // Load data when dashboard is shown
+        fetchSubmissions();
     }
 
     loginBtn.addEventListener('click', async () => {
@@ -70,10 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                localStorage.setItem(ADMIN_PASSWORD_STORAGE_KEY, enteredPassword); // Store the entered password
+                localStorage.setItem(ADMIN_PASSWORD_STORAGE_KEY, enteredPassword);
                 authMessage.textContent = 'Login successful!';
                 authMessage.style.color = 'green';
-                setTimeout(showDashboard, 500); // Give user time to see success message
+                setTimeout(showDashboard, 500);
             } else {
                 authMessage.textContent = data.message || 'Incorrect password.';
                 authMessage.style.color = 'red';
@@ -94,15 +99,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Data Fetching and Display Logic ---
 
-    let allSubmissions = []; // Store all fetched submissions
-    
+    let allSubmissions = [];
+
     async function fetchSubmissions() {
         loadingMessage.style.display = 'block';
         errorMessage.style.display = 'none';
-        submissionsTableBody.innerHTML = ''; // Clear existing table rows
+        submissionsTableBody.innerHTML = '';
 
         const token = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
-        if (!token) { // Should not happen if checkAuth works, but as a safeguard
+        if (!token) {
             authMessage.textContent = 'Authentication token missing. Please log in.';
             showAuthSection();
             return;
@@ -111,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/.netlify/functions/get-submissions', {
                 headers: {
-                    'Authorization': `Bearer ${token}` // Send the stored password as a token
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -127,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             allSubmissions = await response.json();
-            displaySubmissions(allSubmissions); // Display all initially
+            displaySubmissions(allSubmissions);
             loadingMessage.style.display = 'none';
 
         } catch (error) {
@@ -138,16 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displaySubmissions(submissionsToDisplay) {
-        submissionsTableBody.innerHTML = ''; // Clear current display
+        submissionsTableBody.innerHTML = '';
         if (submissionsToDisplay.length === 0) {
-            submissionsTableBody.innerHTML = '<tr><td colspan="7">No submissions found.</td></tr>';
+            submissionsTableBody.innerHTML = '<tr><td colspan="8">No submissions found.</td></tr>'; // Updated colspan
             return;
         }
 
         submissionsToDisplay.forEach(submission => {
             const row = submissionsTableBody.insertRow();
-            
-            // Format date
+
             const submissionDate = new Date(submission.submission_time);
             const formattedDate = submissionDate.toLocaleString('en-GB', {
                 year: 'numeric',
@@ -161,15 +165,23 @@ document.addEventListener('DOMContentLoaded', () => {
             row.insertCell().textContent = submission.child_name;
             row.insertCell().textContent = submission.parent_name;
             row.insertCell().textContent = submission.parent_email;
-            row.insertCell().textContent = `${submission.score}/${submission.total_questions || 'N/A'}`; // Use N/A if total_questions is missing
+            row.insertCell().textContent = `<span class="math-inline">\{submission\.score\}/</span>{submission.total_questions || 'N/A'}`;
             row.insertCell().textContent = submission.expectations;
-            
+
             const actionsCell = row.insertCell();
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = 'Delete';
             deleteBtn.className = 'delete-btn';
-            deleteBtn.dataset.id = submission.id; // Store submission ID
+            deleteBtn.dataset.id = submission.id;
             actionsCell.appendChild(deleteBtn);
+
+            // NEW: Details button cell
+            const detailsCell = row.insertCell();
+            const viewDetailsBtn = document.createElement('button');
+            viewDetailsBtn.textContent = 'View Details';
+            viewDetailsBtn.className = 'view-details-btn'; // Add a class for styling/targeting
+            viewDetailsBtn.dataset.id = submission.id; // Store submission ID
+            detailsCell.appendChild(viewDetailsBtn);
         });
     }
 
@@ -206,6 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await deleteSubmission(submissionId);
             }
         }
+        // NEW: Handle View Details button click
+        if (event.target.classList.contains('view-details-btn')) {
+            const submissionId = event.target.dataset.id;
+            await fetchAndDisplayDetailedResults(submissionId);
+        }
     });
 
     async function deleteSubmission(id) {
@@ -225,9 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Send the stored password as a token
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ id: parseInt(id) }) // Send ID as a number
+                body: JSON.stringify({ id: parseInt(id) })
             });
 
             if (response.status === 401) {
@@ -242,8 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = await response.json();
-            alert(result.message); // Show success message
-            fetchSubmissions(); // Refresh the list after deletion
+            alert(result.message);
+            fetchSubmissions();
             loadingMessage.style.display = 'none';
 
         } catch (error) {
@@ -252,6 +269,83 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingMessage.style.display = 'none';
         }
     }
+
+    // --- NEW: Detailed Results Modal Logic ---
+
+    async function fetchAndDisplayDetailedResults(id) {
+        detailedResultsContent.innerHTML = 'Loading detailed results...';
+        detailsModal.style.display = 'block'; // Show modal immediately
+
+        const token = localStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY);
+        if (!token) {
+            authMessage.textContent = 'Authentication token missing. Please log in.';
+            showAuthSection();
+            return;
+        }
+
+        try {
+            const response = await fetch(`/.netlify/functions/get-submission-details?id=${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                authMessage.textContent = 'Session expired or unauthorized. Please log in again.';
+                showAuthSection();
+                closeModal();
+                return;
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to fetch detailed results for ID ${id}.`);
+            }
+
+            const detailedResults = await response.json();
+            renderDetailedResults(detailedResults);
+
+        } catch (error) {
+            console.error('Error fetching detailed results:', error);
+            detailedResultsContent.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
+        }
+    }
+
+    function renderDetailedResults(results) {
+        if (!results || results.length === 0) {
+            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission.</p>';
+            return;
+        }
+
+        let html = '';
+        results.forEach((item, index) => {
+            const outcomeClass = item.outcome === 'Correct' ? 'correct' : 'incorrect';
+            html += `
+                <div class="question-item">
+                    <h4>Q${index + 1}. ${item.question}</h4>
+                    <p><strong>Your Answer:</strong> ${item.user_answer}</p>
+                    <p><strong>Correct Answer:</strong> ${item.correct_answer}</p>
+                    <p><strong>Score:</strong> <span class="math-inline">\{item\.score\}/</span>{item.max_score}</p>
+                    <p><strong>Outcome:</strong> <span class="<span class="math-inline">\{outcomeClass\}"\></span>{item.outcome}</span></p>
+                </div>
+            `;
+        });
+        detailedResultsContent.innerHTML = html;
+    }
+
+    function closeModal() {
+        detailsModal.style.display = 'none';
+        detailedResultsContent.innerHTML = ''; // Clear content when closing
+    }
+
+    // Close modal listeners
+    closeModalBtn.addEventListener('click', closeModal);
+    closeSpanButton.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+        if (event.target === detailsModal) {
+            closeModal();
+        }
+    });
 
     // Initial check on page load
     checkAuth();
