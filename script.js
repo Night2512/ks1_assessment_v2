@@ -1,23 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Customizable Content (for Admins) ---
+    const CUSTOM_CONTENT = {
+        mainTitle: "Key Stage 1 Online Assessment - Mona Teaches",
+        infoHeading: "Start Your Assessment",
+        infoInstructions: "Please provide the following information to begin the assessment:",
+        assessmentIntro: "The assessment has a 15 minute time limit. It will automatically submit once this time expires.",
+        securityCheckText: "Please complete the security check above to enable the 'Start Assessment' button.",
+        resultsHeading: "Assessment Results",
+        emailSending: "Sending your detailed results email...",
+        emailSentSuccess: "Email sent successfully! Please check your inbox (and spam folder).",
+        emailFailed: "Failed to send email. Please contact support if this persists.",
+        networkError: "Failed to send email: Network error. Please check your connection.",
+        timeUpMessage: "Time's up! Your assessment has been automatically submitted.",
+        expectationsBelow: "Below Expectations",
+        expectationsMeets: "Meets Expectations",
+        expectationsAbove: "Above Expectations"
+    };
+
+    // Apply customizable content
+    document.getElementById('mainTitle').textContent = CUSTOM_CONTENT.mainTitle;
+    document.getElementById('mainTitleReplicated').textContent = CUSTOM_CONTENT.mainTitle; // Update h1 as well
+    document.getElementById('infoHeading').textContent = CUSTOM_CONTENT.infoHeading;
+    document.getElementById('infoInstructions').textContent = CUSTOM_CONTENT.infoInstructions;
+    document.getElementById('assessmentIntro').textContent = CUSTOM_CONTENT.assessmentIntro;
+    document.getElementById('securityCheckText').textContent = CUSTOM_CONTENT.securityCheckText;
+    document.getElementById('resultsHeading').textContent = CUSTOM_CONTENT.resultsHeading;
+
+
     // --- Elements ---
     const infoCollectionDiv = document.getElementById('infoCollection');
     const infoForm = document.getElementById('infoForm');
+    const startAssessmentBtn = document.getElementById('startAssessmentBtn');
     const assessmentSectionDiv = document.getElementById('assessmentSection');
     const assessmentForm = document.getElementById('assessmentForm');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+    const submitAssessmentBtn = document.getElementById('submitAssessmentBtn');
     const resultsDiv = document.getElementById('results');
     const detailedResultsDiv = document.getElementById('detailedResults');
     const overallScoreElement = document.getElementById('overallScore');
     const overallExpectationsElement = document.getElementById('overallExpectations');
     const timerDisplay = document.getElementById('time');
-    const sendEmailBtn = document.getElementById('sendEmailBtn'); // Will be hidden for auto-send
     const emailStatus = document.getElementById('emailStatus');
-    const submitAssessmentBtn = document.getElementById('submitAssessmentBtn');
+    const currentQNumSpan = document.getElementById('currentQNum');
+    const totalQNumSpan = document.getElementById('totalQNum');
+
 
     // --- User Info Storage ---
     let parentName = '';
     let childName = '';
     let parentEmail = '';
-											
+
     let assessmentTextResults = ''; // To store plain text results for emailing
     let assessmentHtmlResults = ''; // To store HTML results for emailing
     const CURRENT_KEY_STAGE = "Key Stage 1"; // Define the current Key Stage
@@ -26,341 +59,460 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalTime = 15 * 60; // 15 minutes in seconds
     let timeLeft = totalTime;
     let timerInterval;
+    let assessmentSubmittedByTime = false; // Flag to check if submitted by timer
 
-    // --- Assessment Data (UPDATED FOR KS1 - 30 QUESTIONS, ORIGINAL QUESTIONS PRESERVED) ---
-    const correctAnswers = {
-        // Original English Questions (Q1-Q5)
-        q1: 'b', // Snowdrop
-        q2: 'c', // White
-        q3: 'cats',  // Plural of cat (case-insensitive in check)
-        q4: 'dog',   // Spelling (case-insensitive in check)
-        q5: 'Buster loves to run in the park.', // Sentence construction (case-sensitive for Above)
-        q6: 'flies', // Verb in "The bird flies high." (case-insensitive)
-        q7: 'b', // small
-        q8: 'a', // Rhymes with tree (accept common rhymes) - I'll use 'bee' as primary
-        q9: 'book', // Suitable word for "read a good ____." (e.g., 'book', 'story')
-        q10: 'c', // table
-        q11: 'a', // Missing word in "The children like to play with their new b___." (case-insensitive)
-        q12: 'The sky is blue.', // Sentence with 'blue' (flexible check for presence of 'blue')
-        q13: "I'm", // Contraction for 'I am' (case-insensitive, includes apostrophe)
-
-        // Original Maths Questions (Q6-Q12)
-        q14: 'b', // 13 apples
-        q15: 12,   // 7 + 5
-        q16: 7,    // 10 - 3
-        q17: 5,    // 5 + 5 = 10
-        q18: 'b', // 3 o'clock
-        q19: 10,  // 6 + 4
-        q20: 'c',  // 1/4
-        q21: 4, // Corners of a square
-        q22: 6, // 2 + 2 + 2
-        q23: 4, // 7 - 3
-        q24: 6, // Half of 12
-        q25: 20, // Count by 5s
-        q26: 'rectangle', // Shape of a regular door (case-insensitive)
-        q27: 7, // Days in a week
-        q28: 10, // 15 take away 5
-        q29: 'b', // Brick
-        q30: 8 // 4 groups of 2
-    };
-												 
-
-    // All questions are 1 point for simplicity, making total score out of 30.
-    const questionPoints = Array.from({length: 30}, (_, i) => ({[`q${i + 1}`]: 1}))
-        .reduce((acc, curr) => ({...acc, ...curr}), {});
-    // Total possible score is 30 points.
-
-    // --- Initial state for submit button ---
-    // The submit button for the assessment should be disabled until Turnstile is completed.
-    if (submitAssessmentBtn) {
-        submitAssessmentBtn.disabled = true;
-    }
-
-    // --- Callback for Cloudflare Turnstile ---
-    // This function is called by the Turnstile widget when it successfully completes its challenge.
-    window.turnstileCallback = function(token) {
-        if (submitAssessmentBtn) {
-            submitAssessmentBtn.disabled = false; // Enable the submit button
+    // --- Assessment Data (Extracted from your index.html and corrected with your provided answers) ---
+    const questions = [
+        {
+            id: 'q1',
+            type: 'radio',
+            question: "What is the cat's name?",
+            passage: "Lily loves animals. She has a fluffy white cat named Snowdrop. Snowdrop likes to play with a red ball of yarn. Lily also has a small, brown dog called Buster. Buster loves to run in the park and chase squirrels.",
+            options: { a: "Buster", b: "Snowdrop", c: "Lily" },
+            correctAnswer: "b",
+            correctAnswerDisplay: "Snowdrop"
+        },
+        {
+            id: 'q2',
+            type: 'radio',
+            question: "What colour is the cat?",
+            options: { a: "Brown", b: "Red", c: "White" },
+            correctAnswer: "c",
+            correctAnswerDisplay: "White"
+        },
+        {
+            id: 'q3',
+            type: 'text',
+            question: "Fill in the missing word: Lily gets a second fluffy white cat. Now she has two fluffy white ____.",
+            correctAnswer: "cats",
+            explanation: "The plural of cat is 'cats'."
+        },
+        {
+            id: 'q4',
+            type: 'text',
+            question: "Spell the word for the animal that chases squirrels in the park.",
+            correctAnswer: "dog",
+            explanation: "The animal that chases squirrels in the park is a dog."
+        },
+        {
+            id: 'q5',
+            type: 'text',
+            question: "Put the words in the correct order to make a sentence: park., to, in, run, loves, Buster, the",
+            correctAnswer: "Buster loves to run in the park.",
+            explanation: "The correct sentence is 'Buster loves to run in the park.'"
+        },
+        {
+            id: 'q6',
+            type: 'text',
+            question: "What is the verb in the sentence: \"The bird flies high.\"?",
+            correctAnswer: "flies",
+            explanation: "The verb describes the action, which is 'flies'."
+        },
+        {
+            id: 'q7',
+            type: 'radio',
+            question: "What is the opposite of 'big'?",
+            options: { a: "large", b: "small", c: "huge" },
+            correctAnswer: "b",
+            correctAnswerDisplay: "small"
+        },
+        {
+            id: 'q8',
+            type: 'radio',
+            question: "Which word rhymes with 'tree'?",
+            options: { a: "bee", b: "cat", c: "dog" },
+            correctAnswer: "a",
+            correctAnswerDisplay: "bee"
+        },
+        {
+            id: 'q9',
+            type: 'text',
+            question: "Complete the sentence: \"I like to read a good _____.\"",
+            correctAnswer: "book",
+            explanation: "A common word to complete the sentence is 'book'."
+        },
+        {
+            id: 'q10',
+            type: 'radio',
+            question: "Which word is a noun?",
+            options: { a: "run", b: "quickly", c: "table" },
+            correctAnswer: "c",
+            correctAnswerDisplay: "table"
+        },
+        {
+            id: 'q11',
+            type: 'radio',
+            question: "What is the past tense of 'go'?",
+            options: { a: "went", b: "go", c: "goes" },
+            correctAnswer: "a",
+            correctAnswerDisplay: "went"
+        },
+        {
+            id: 'q12',
+            type: 'text',
+            question: "Write a sentence using the word 'blue'.",
+            correctAnswer: "The sky is blue.", // Assuming this as the example answer
+            explanation: "An example sentence is 'The sky is blue.' (Other grammatically correct sentences using 'blue' would also be acceptable)."
+        },
+        {
+            id: 'q13',
+            type: 'text',
+            question: "What is the contraction for 'I am'?",
+            correctAnswer: "I'm",
+            explanation: "The contraction for 'I am' is 'I'm'."
+        },
+        {
+            id: 'q14',
+            type: 'radio',
+            question: "How many apples are there? (Based on 13_apples.jpg image)",
+            options: { a: "11", b: "13", c: "15" },
+            correctAnswer: "b",
+            correctAnswerDisplay: "13"
+        },
+        {
+            id: 'q15',
+            type: 'number',
+            question: "What is 7 + 5?",
+            correctAnswer: 12,
+            explanation: "7 plus 5 equals 12."
+        },
+        {
+            id: 'q16',
+            type: 'number',
+            question: "What is 10 - 3?",
+            correctAnswer: 7,
+            explanation: "10 minus 3 equals 7."
+        },
+        {
+            id: 'q17',
+            type: 'number',
+            question: "5 + ___ = 10",
+            correctAnswer: 5,
+            explanation: "5 plus 5 equals 10."
+        },
+        {
+            id: 'q18',
+            type: 'radio',
+            question: "What time does the clock show? (Based on clock_3_oclock.png image)",
+            options: { a: "1 o'clock", b: "3 o'clock", c: "6 o'clock" },
+            correctAnswer: "b",
+            correctAnswerDisplay: "3 o'clock"
+        },
+        {
+            id: 'q19',
+            type: 'number',
+            question: "Sarah has 6 red pens and 4 blue pens. How many pens does she have altogether?",
+            correctAnswer: 10,
+            explanation: "6 pens + 4 pens = 10 pens."
+        },
+        {
+            id: 'q20',
+            type: 'radio',
+            question: "What fraction of the circle is shaded? (Based on shaded_circle.png image, 1/4 shaded)",
+            options: { a: "1/2", b: "1/3", c: "1/4" },
+            correctAnswer: "c",
+            correctAnswerDisplay: "1/4"
+        },
+        {
+            id: 'q21',
+            type: 'number',
+            question: "How many corners does a square have?",
+            correctAnswer: 4,
+            explanation: "A square has 4 corners."
+        },
+        {
+            id: 'q22',
+            type: 'number',
+            question: "What is 2 + 2 + 2?",
+            correctAnswer: 6,
+            explanation: "2 + 2 + 2 = 6."
+        },
+        {
+            id: 'q23',
+            type: 'number',
+            question: "If you have 7 balloons and 3 pop, how many are left?",
+            correctAnswer: 4,
+            explanation: "7 balloons - 3 popped balloons = 4 balloons left."
+        },
+        {
+            id: 'q24',
+            type: 'number',
+            question: "Half of 12 is?",
+            correctAnswer: 6,
+            explanation: "Half of 12 is 6."
+        },
+        {
+            id: 'q25',
+            type: 'number',
+            question: "Count by 5s: 5, 10, 15, ___?",
+            correctAnswer: 20,
+            explanation: "The next number in the pattern 5, 10, 15 is 20 (counting by 5s)."
+        },
+        {
+            id: 'q26',
+            type: 'text',
+            question: "What shape is a regular door?",
+            correctAnswer: "rectangle",
+            explanation: "A regular door is typically a rectangle."
+        },
+        {
+            id: 'q27',
+            type: 'number',
+            question: "How many days are in a week?",
+            correctAnswer: 7,
+            explanation: "There are 7 days in a week."
+        },
+        {
+            id: 'q28',
+            type: 'number',
+            question: "What is 15 take away 5?",
+            correctAnswer: 10,
+            explanation: "15 take away 5 equals 10."
+        },
+        {
+            id: 'q29',
+            type: 'radio',
+            question: "Which is heavier, a feather or a brick?",
+            options: { a: "Feather", b: "Brick" },
+            correctAnswer: "b",
+            correctAnswerDisplay: "Brick"
+        },
+        {
+            id: 'q30',
+            type: 'number',
+            question: "If you have 4 groups of 2 objects, how many objects do you have in total?",
+            correctAnswer: 8,
+            explanation: "4 groups of 2 objects is 4 multiplied by 2, which equals 8."
         }
-    };
+    ];
 
-    // --- Error Callback for Cloudflare Turnstile ---
-    // This function is called if the Turnstile widget encounters an error.
-    window.turnstileErrorCallback = function() {
-        if (submitAssessmentBtn) {
-            submitAssessmentBtn.disabled = true; // Keep the button disabled on error
-        }
-        alert('Security check failed. Please refresh the page and try again.');
-        // Optionally, force a reset if the Turnstile API allows it or re-render
-        if (typeof turnstile !== 'undefined' && turnstile.reset) {
-            turnstile.reset();
-        }
-    };
-
-
-    // --- Event Listeners ---
-
-    // 1. Info Form Submission (Start Assessment)
-    infoForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        // Get user input
-        parentName = document.getElementById('parentName').value.trim();
-        childName = document.getElementById('childName').value.trim();
-        parentEmail = document.getElementById('parentEmail').value.trim();
-
-        if (parentName && childName && parentEmail) {
-            infoCollectionDiv.style.display = 'none'; // Hide info form
-            assessmentSectionDiv.style.display = 'block'; // Show assessment
-            startTimer(); // Start the timer ONLY when the assessment begins
-        } else {
-            alert('Please fill in all required information.');
-        }
-    });
-
-    // 2. Assessment Form Submission (Modified for Turnstile)
-    assessmentForm.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Get the Turnstile response token
-        const turnstileToken = document.querySelector('[name="cf-turnstile-response"]').value;
-
-        if (!turnstileToken) {
-            alert('Please complete the security check.');
-            // Optionally, reset turnstile if it's there
-            if (typeof turnstile !== 'undefined' && turnstile.reset) {
-                turnstile.reset();
-            }
-            if (submitAssessmentBtn) {
-                submitAssessmentBtn.disabled = true;
-            }
-            return;
-        }
-
-        // Send data to Netlify function for server-side Turnstile verification
-        try {
-            const verificationResponse = await fetch('/.netlify/functions/verify-turnstile', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ turnstileToken: turnstileToken }),
-            });
-
-            const verificationResult = await verificationResponse.json();
-
-            if (verificationResult.success) {
-                // Turnstile verification successful, proceed with assessment submission
-                clearInterval(timerInterval); // Stop the timer
-                submitAssessment(); // Process results
-            } else {
-                alert('Security check failed. Please try again.');
-                console.error('Turnstile verification failed:', verificationResult.errors);
-                // Reset Turnstile widget to allow user to try again
-                if (typeof turnstile !== 'undefined' && turnstile.reset) {
-                    turnstile.reset();
-                }
-                if (submitAssessmentBtn) {
-                    submitAssessmentBtn.disabled = true;
-                }
-            }
-        } catch (error) {
-            console.error('Error during Turnstile verification:', error);
-            alert('An error occurred during security check. Please try again.');
-            if (typeof turnstile !== 'undefined' && turnstile.reset) {
-                turnstile.reset();
-            }
-            if (submitAssessmentBtn) {
-                submitAssessmentBtn.disabled = true;
-            }
-        }
-    });
+    let userAnswers = {};
+    let currentQuestionIndex = 0;
 
     // --- Functions ---
 
+    // Progress Indicator Update
+    function updateProgressIndicator() {
+        currentQNumSpan.textContent = currentQuestionIndex + 1;
+        totalQNumSpan.textContent = questions.length;
+    }
+
+    // Format time for display
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    // Start Timer
     function startTimer() {
         timerInterval = setInterval(() => {
             timeLeft--;
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
+            timerDisplay.textContent = formatTime(timeLeft);
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                // No alert, auto-submit
-                submitAssessment();
+                assessmentSubmittedByTime = true;
+                submitAssessment(); // Auto-submit when time runs out
             }
         }, 1000);
     }
 
-    function submitAssessment() {
-        let totalScore = 0;
-        detailedResultsDiv.innerHTML = ''; // Clear previous results
-        assessmentTextResults = `--- Key Stage 1 Assessment Results for ${childName} (Parent: ${parentName}) ---\n\n`;
-        assessmentHtmlResults = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
-                    h2, h3, h4 { color: #0056b3; }
-                    .question-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
-                    .question-item:last-child { border-bottom: none; }
-                    .score-summary { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #007bff; }
-                    .correct { color: green; }
-                    .incorrect { color: red; }
-                    .expectation-meets { color: #28a745; font-weight: bold; }
-                    .expectation-below { color: #dc3545; font-weight: bold; }
-                    .expectation-above { color: #007bff; font-weight: bold; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h2>Key Stage 1 Assessment Results</h2>
-                    <p><strong>Parent Name:</strong> ${parentName}</p>
-                    <p><strong>Child Name:</strong> ${childName}</p>
-                    <p><strong>Parent Email:</strong> ${parentEmail}</p>
-                    <hr>
-                    <h3>Detailed Results:</h3>
-        `; // End of assessmentHtmlResults initial string
+    // Show a specific question
+    function showQuestion(index) {
+        questionsContainer.innerHTML = ''; // Clear previous question
+        const q = questions[index];
+        const questionBlock = document.createElement('div');
+        questionBlock.className = 'question-block';
+        questionBlock.id = q.id;
 
-        const questions = [
-            'q1', 'q2', 'q3', 'q4', 'q5', // Original English
-            'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', // New English
-            'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20', // Original Maths
-            'q21', 'q22', 'q23', 'q24', 'q25', 'q26', 'q27', 'q28', 'q29', 'q30' // New Maths
-        ];
+        let questionHtml = '';
 
-        questions.forEach(qId => {
-            let userAnswer;
+        // Add passage if it exists for this question
+        if (q.passage) {
+            questionHtml += `<div class="passage"><p>${q.passage}</p></div>`;
+        }
+
+        questionHtml += `<h3>${index + 1}. ${q.question}</h3>`; // Added index + 1 for question numbering display
+
+        // Add image if specified in question object
+        if (q.image) {
+            questionHtml += `<img src="${q.image}" alt="${q.imageAlt}" style="max-width: 150px; display: block; margin-bottom: 10px;">`;
+        }
+
+        if (q.type === 'radio') {
+            for (const optionKey in q.options) {
+                questionHtml += `
+                    <div>
+                        <label>
+                            <input type="radio" name="${q.id}_answer" value="${optionKey}" ${userAnswers[q.id] === optionKey ? 'checked' : ''}>
+                            ${optionKey}) ${q.options[optionKey]}
+                        </label>
+                    </div>
+                `;
+            }
+        } else if (q.type === 'text') {
+            questionHtml += `
+                <input type="text" name="${q.id}_answer" placeholder="Enter your answer" value="${userAnswers[q.id] || ''}">
+            `;
+        } else if (q.type === 'number') {
+            questionHtml += `
+                <input type="number" name="${q.id}_answer" placeholder="Enter number" value="${userAnswers[q.id] || ''}">
+            `;
+        }
+        questionBlock.innerHTML = questionHtml;
+        questionsContainer.appendChild(questionBlock);
+
+        // Update progress indicator
+        updateProgressIndicator();
+
+        // Manage button visibility
+        if (currentQuestionIndex === questions.length - 1) {
+            nextQuestionBtn.style.display = 'none';
+            submitAssessmentBtn.style.display = 'block';
+        } else {
+            nextQuestionBtn.style.display = 'block';
+            submitAssessmentBtn.style.display = 'none';
+        }
+    }
+
+    // Handle moving to the next question
+    function nextQuestion() {
+        // Save current answer
+        const currentQ = questions[currentQuestionIndex];
+        let answerInput;
+        if (currentQ.type === 'radio') {
+            answerInput = document.querySelector(`input[name="${currentQ.id}_answer"]:checked`);
+            userAnswers[currentQ.id] = answerInput ? answerInput.value : '';
+        } else {
+            answerInput = document.querySelector(`[name="${currentQ.id}_answer"]`);
+            userAnswers[currentQ.id] = answerInput ? answerInput.value : '';
+        }
+
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            showQuestion(currentQuestionIndex);
+        }
+    }
+
+    // Submit Assessment
+    async function submitAssessment() {
+        clearInterval(timerInterval); // Stop the timer
+
+        // Save the answer for the last question
+        const currentQ = questions[currentQuestionIndex];
+        let answerInput;
+        if (currentQ.type === 'radio') {
+            answerInput = document.querySelector(`input[name="${currentQ.id}_answer"]:checked`);
+            userAnswers[currentQ.id] = answerInput ? answerInput.value : '';
+        } else {
+            answerInput = document.querySelector(`[name="${currentQ.id}_answer"]`);
+            userAnswers[currentQ.id] = answerInput ? answerInput.value : '';
+        }
+
+        assessmentSectionDiv.style.display = 'none';
+        resultsDiv.style.display = 'block';
+
+        let score = 0;
+        let resultsHtmlContent = `<h2>Detailed Results</h2>`;
+        let resultsTextContent = `Detailed Results:\n`;
+        const scoreThresholds = {
+            below: questions.length * 0.33, // Example: Below 33% is Below Expectations
+            meets: questions.length * 0.66  // Example: 33-65% is Meets, >= 66% is Above
+        };
+
+
+        questions.forEach((q, index) => {
+            const userAnswer = userAnswers[q.id];
             let isCorrect = false;
-            let score = 0;
-            const correctAns = correctAnswers[qId];
-            const maxPoints = questionPoints[qId];
-            let outcomeText = '';
-            let outcomeClass = '';
+            let explanation = q.explanation || '';
+            let userAnswerDisplay = userAnswer === '' ? 'No Answer' : userAnswer;
 
-            const qElement = document.getElementById(qId);
-            const questionTitle = qElement ? qElement.querySelector('h3').textContent : `Question ${qId.toUpperCase()}`;
-
-            const inputField = document.querySelector(`[name="${qId}_answer"]`);
-            if (!inputField) {
-                userAnswer = 'N/A (Input field not found)';
-                isCorrect = false;
-            } else if (inputField.type === 'radio') {
-                const selectedRadio = document.querySelector(`input[name="${qId}_answer"]:checked`);
-                userAnswer = selectedRadio ? selectedRadio.value : 'No Answer';
-                isCorrect = (userAnswer === correctAns);
-            } else if (inputField.type === 'text') {
-                userAnswer = inputField.value.trim();
-                // Special handling for specific text questions for flexible comparison
-                if (qId === 'q5') { // For sentence question q5
-                    // Check if keywords are present, or a general match (very basic)
-                    isCorrect = userAnswer.toLowerCase().includes('buster') && userAnswer.toLowerCase().includes('run') && userAnswer.toLowerCase().includes('park') && userAnswer.length > 5;
-                } else if (qId === 'q12') { // For sentence question q12
-                    isCorrect = userAnswer.toLowerCase().includes('blue') && userAnswer.length > 5;
+            if (q.type === 'radio') {
+                isCorrect = userAnswer === q.correctAnswer;
+                if (userAnswer && q.options[userAnswer]) {
+                    userAnswerDisplay = q.options[userAnswer]; // Display the option text, not just the key
                 }
-                else if (qId === 'q3' || qId === 'q4' || qId === 'q6' || qId === 'q8' || qId === 'q9' || qId === 'q11' || qId === 'q13' || qId === 'q26') {
-                    // For other text questions, case-insensitive exact match
-                    isCorrect = (userAnswer.toLowerCase() === String(correctAns).toLowerCase());
-                } else {
-                    // Default for other text inputs (if any)
-                    isCorrect = (userAnswer.toLowerCase() === String(correctAns).toLowerCase());
-                }
-            } else if (inputField.type === 'number') {
-                userAnswer = parseInt(inputField.value, 10);
-                isCorrect = (userAnswer === correctAns);
+            } else if (q.type === 'text') {
+                isCorrect = userAnswer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
+            } else if (q.type === 'number') {
+                isCorrect = parseInt(userAnswer) === q.correctAnswer;
             }
 
             if (isCorrect) {
-                score = maxPoints;
-                totalScore += score;
-                outcomeText = 'Correct';
-                outcomeClass = 'correct';
-																					 
-																													  
-														   
-														   
-				 
-            } else {
-                score = 0;
-                outcomeText = 'Incorrect';
-                outcomeClass = 'incorrect';
+                score++;
             }
 
-            // Append detailed results to the HTML for display on page
-            detailedResultsDiv.innerHTML += `
+            // Prepare HTML results
+            resultsHtmlContent += `
                 <div class="result-item">
-                    <h4>${questionTitle}</h4>
-                    <p><strong>Your Answer:</strong> ${userAnswer}</p>
-                    <p><strong>Correct Answer:</strong> ${correctAns}</p>
-                    <p><strong>Score:</strong> ${score}/${maxPoints}</p>
-                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${outcomeText}</span></p>
+                    <p><strong>${index + 1}. ${q.question}</strong></p>
+                    <p>Your Answer: <span class="${isCorrect ? 'correct' : 'incorrect'}">${userAnswerDisplay}</span></p>
+                    <p>Correct Answer: <span class="correct">${q.correctAnswerDisplay || q.correctAnswer}</span></p>
+                    ${explanation ? `<p class="explanation">Explanation: ${explanation}</p>` : ''}
                 </div>
             `;
 
-            // Append detailed results to the plain text summary for email
-            assessmentTextResults += `Question: ${questionTitle}\n`;
-            assessmentTextResults += `  Your Answer: ${userAnswer}\n`;
-            assessmentTextResults += `  Correct Answer: ${correctAns}\n`;
-            assessmentTextResults += `  Score: ${score}/${maxPoints}\n`;
-            assessmentTextResults += `  Outcome: ${outcomeText}\n\n`;
-
-            // Append detailed results to the HTML summary for email
-            assessmentHtmlResults += `
-                <div class="question-item">
-                    <h4>${questionTitle}</h4>
-                    <p><strong>Your Answer:</strong> ${userAnswer}</p>
-                    <p><strong>Correct Answer:</strong> ${correctAns}</p>
-                    <p><strong>Score:</strong> ${score}/${maxPoints}</p>
-                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${outcomeText}</span></p>
-                </div>
-            `;
+            // Prepare Plain Text results
+            resultsTextContent += `\nQuestion ${index + 1}: ${q.question}\n`;
+            resultsTextContent += `Your Answer: ${userAnswerDisplay} (${isCorrect ? 'Correct' : 'Incorrect'})\n`;
+            resultsTextContent += `Correct Answer: ${q.correctAnswerDisplay || q.correctAnswer}\n`;
+            if (explanation) {
+                resultsTextContent += `Explanation: ${explanation}\n`;
+            }
         });
 
-        overallScoreElement.textContent = `Overall Score: ${totalScore}/30`;
-        assessmentTextResults += `\nOverall Score: ${totalScore}/30\n`;
+        detailedResultsDiv.innerHTML = resultsHtmlContent;
+        overallScoreElement.textContent = `Overall Score: ${score}/${questions.length}`;
 
         let overallExpectations = '';
-        let overallExpectationsClass = '';
-        if (totalScore >= 26) { // Above Expectations (approx. 85%+)
-            overallExpectations = 'Above Expectations (Excellent understanding)';
-            overallExpectationsClass = 'expectation-above';
-        } else if (totalScore >= 18) { // Meets Expectations (approx. 60%+)
-            overallExpectations = 'Meets Expectations (Good understanding)';
-            overallExpectationsClass = 'expectation-meets';
-        } else { // Below Expectations
-            overallExpectations = 'Below Expectations (Needs more support)';
-            overallExpectationsClass = 'expectation-below';
+        if (score < scoreThresholds.below) {
+            overallExpectations = CUSTOM_CONTENT.expectationsBelow;
+        } else if (score >= scoreThresholds.meets) {
+            overallExpectations = CUSTOM_CONTENT.expectationsAbove;
+        } else {
+            overallExpectations = CUSTOM_CONTENT.expectationsMeets;
         }
-        overallExpectationsElement.innerHTML = `Overall Outcome: <span class="${overallExpectationsClass}">${overallExpectations}</span>`;
-        assessmentTextResults += `Overall Outcome: ${overallExpectations}\n`;
+        overallExpectationsElement.textContent = `Overall Performance: ${overallExpectations}`;
 
-        // End of assessmentHtmlResults string
-        assessmentHtmlResults += `
-                    <div class="score-summary">
-                        <h3>Overall Score: ${totalScore}/30</h3>
-                        <h3>Overall Outcome: <span class="${overallExpectationsClass}">${overallExpectations}</span></h3>
-                    </div>
-                    <p>If you have any questions, please reply to this email.</p>
-                    <p>Best regards,<br/>Mona Teaches</p>
-                </div>
-            </body>
-            </html>
+        // Add auto-submit message if applicable
+        if (assessmentSubmittedByTime) {
+            const autoSubmitMessage = document.createElement('p');
+            autoSubmitMessage.textContent = CUSTOM_CONTENT.timeUpMessage;
+            autoSubmitMessage.style.color = '#dc3545'; // Red for emphasis
+            autoSubmitMessage.style.fontWeight = 'bold';
+            overallScoreElement.parentNode.insertBefore(autoSubmitMessage, overallScoreElement.nextSibling);
+        }
+
+        // Store results for emailing
+        assessmentTextResults = `
+Child's Name: ${childName}
+Parent's Name: ${parentName}
+Parent's Email: ${parentEmail}
+
+Overall Score: ${score}/${questions.length}
+Overall Performance: ${overallExpectations}
+
+${resultsTextContent}
         `;
 
-        assessmentSectionDiv.style.display = 'none'; // Hide assessment form
-        resultsDiv.style.display = 'block';   // Show results
+        assessmentHtmlResults = `
+            <h1>${CURRENT_KEY_STAGE} Assessment Results for ${childName}</h1>
+            <p><strong>Parent Name:</strong> ${parentName}</p>
+            <p><strong>Parent Email:</strong> ${parentEmail}</p>
+            <p><strong>Overall Score:</strong> ${score}/${questions.length}</p>
+            <p><strong>Overall Performance:</strong> ${overallExpectations}</p>
+            ${assessmentSubmittedByTime ? `<p style="color:#dc3545;font-weight:bold;">${CUSTOM_CONTENT.timeUpMessage}</p>` : ''}
+            ${resultsHtmlContent}
+        `;
 
-        // --- Auto-send email and hide the button ---
-        sendEmailBtn.style.display = 'none'; // Hide the button
-        sendAssessmentEmail(parentName, childName, parentEmail, assessmentTextResults, assessmentHtmlResults, CURRENT_KEY_STAGE);
+        // Immediately send results email and save to DB
+        sendEmail(parentName, childName, parentEmail, assessmentTextResults, assessmentHtmlResults);
+        saveSubmission(parentName, childName, parentEmail, score, overallExpectations, userAnswers);
     }
 
-    // --- Send Email Function (Client-side, calls Netlify Function) ---
-    async function sendAssessmentEmail(parentName, childName, parentEmail, resultsText, resultsHtml, keyStage) {
-        emailStatus.textContent = 'Sending email...';
+    // Send email function
+    async function sendEmail(parentName, childName, parentEmail, resultsText, resultsHtml) {
+        emailStatus.textContent = CUSTOM_CONTENT.emailSending;
         emailStatus.style.color = '#007bff'; // Blue for sending
 
         try {
@@ -380,18 +532,107 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                emailStatus.textContent = 'Email sent successfully!';
+                emailStatus.textContent = CUSTOM_CONTENT.emailSentSuccess;
                 emailStatus.style.color = '#28a745'; // Green for success
             } else {
                 const errorData = await response.json();
                 console.error('Error sending email:', errorData.message);
-                emailStatus.textContent = `Failed to send email: ${errorData.message || 'Server error'}`;
+                emailStatus.textContent = `${CUSTOM_CONTENT.emailFailed}: ${errorData.message || 'Server error'}`;
                 emailStatus.style.color = '#dc3545'; // Red for error
             }
         } catch (error) {
             console.error('Network or unexpected error:', error);
-            emailStatus.textContent = `Failed to send email: Network error`;
+            emailStatus.textContent = `${CUSTOM_CONTENT.networkError}`;
             emailStatus.style.color = '#dc3545'; // Red for error
         }
     }
+
+    // Save submission to database function
+    async function saveSubmission(parentName, childName, parentEmail, score, expectations, userAnswers) {
+        try {
+            const response = await fetch('/.netlify/functions/save-submission', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    parentName,
+                    childName,
+                    parentEmail,
+                    score,
+                    expectations,
+                    detailedResults: userAnswers, // Save all user answers
+                    submissionTime: new Date().toISOString()
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error saving submission to DB:', errorData.message);
+            }
+            // No user-facing message needed for DB save, console.log for dev/debug
+            console.log('Submission saved to DB successfully (or attempt made).');
+        } catch (error) {
+            console.error('Network or unexpected error during DB save:', error);
+        }
+    }
+
+    // --- Event Listeners ---
+
+    // Info Form Submission
+    infoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Save user info
+        parentName = document.getElementById('parentName').value;
+        childName = document.getElementById('childName').value;
+        parentEmail = document.getElementById('parentEmail').value;
+
+        infoCollectionDiv.style.display = 'none';
+        assessmentSectionDiv.style.display = 'block';
+
+        showQuestion(currentQuestionIndex);
+        startTimer();
+    });
+
+    // Cloudflare Turnstile Callback
+    window.turnstileCallback = function(token) {
+        // Verify token server-side (optional but recommended)
+        fetch('/.netlify/functions/verify-turnstile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ turnstileToken: token })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                startAssessmentBtn.disabled = false;
+            } else {
+                startAssessmentBtn.disabled = true;
+                console.error('Turnstile verification failed:', data.errors);
+                alert('Security check failed. Please try again.');
+            }
+        })
+        .catch(error => {
+            startAssessmentBtn.disabled = true;
+            console.error('Error verifying Turnstile:', error);
+            alert('An error occurred during security verification. Please try again.');
+        });
+    };
+
+    window.turnstileErrorCallback = function() {
+        startAssessmentBtn.disabled = true;
+        console.error('Turnstile widget encountered an error.');
+        alert('There was an issue loading the security check. Please refresh the page.');
+    };
+
+    // Next Question Button
+    nextQuestionBtn.addEventListener('click', nextQuestion);
+
+    // Assessment Form Submission (for final submit button)
+    assessmentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitAssessment();
+    });
 });

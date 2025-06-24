@@ -44,123 +44,93 @@ h1, h2, h3 {
 
 .question-block input[type="text"],
 .question-block input[type="number"],
-.question-block input[type="email"] { /* Added email input styling */
-    width: 80%;
-    padding: 8px;
-    margin-top: 5px;
+.question-block input[type="email"] {
+    width: calc(100% - 22px); /* Account for padding and border */
+    padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
-}
-
-.question-block input.small-input {
-    width: 60px; /* For number bonds */
-    text-align: center;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
 .question-block label {
     display: block;
-    margin-bottom: 5px;
-    cursor: pointer;
+    margin-bottom: 8px;
+    font-weight: bold;
 }
 
 .question-block input[type="radio"] {
     margin-right: 8px;
 }
 
-.passage {
-    background-color: #e6f7ff;
-    border-left: 5px solid #007bff;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-button[type="submit"] {
-    display: block;
-    width: 200px;
-    padding: 12px 20px;
-    margin: 30px auto 0;
-    background-color: #28a745;
+button {
+    background-color: #007bff;
     color: white;
+    padding: 10px 15px;
     border: none;
     border-radius: 5px;
-    font-size: 1.1em;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    font-size: 1em;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
 }
 
 .turnstile-container {
-    display: flex; /* Use flexbox for centering */
-    flex-direction: column; /* Stack children vertically */
-    align-items: center; /* Center horizontally */
-    margin-top: 20px; /* Add some space above the widget */
-    margin-bottom: 20px; /* Add some space below the widget */
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: center;
 }
 
-/* You might want to adjust the small-text style if it's too wide */
 .small-text {
-    text-align: center;
-    font-size: 0.9em;
+    font-size: 0.8em;
     color: #666;
-    margin-top: 5px;
+    margin-top: 10px;
 }
 
-button[type="submit"]:hover {
-    background-color: #218838;
-}
-
-.timer-display {
-    text-align: right;
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #d9534f;
-    margin-bottom: 20px;
-}
-
-/* Results Section */
+/* Styles for results page */
 .results-container {
-    margin-top: 40px;
-    padding: 30px;
-    background-color: #e9ecef;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.05);
-}
-
-.results-container h2 {
-    text-align: center;
-    color: #007bff;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px dashed #ccc;
 }
 
 .result-item {
-    padding: 10px 0;
-    border-bottom: 1px dashed #ccc;
-}
-
-.result-item:last-child {
-    border-bottom: none;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f9f9f9;
 }
 
 .result-item p {
     margin: 5px 0;
 }
 
+.result-item .user-answer {
+    font-weight: bold;
+}
+
 .result-item .correct {
-    color: green;
-}
-
-.result-item .incorrect {
-    color: red;
-}
-
-.result-item .expectation-meets {
     color: #28a745; /* Green */
     font-weight: bold;
 }
-.result-item .expectation-below {
+
+.result-item .incorrect {
     color: #dc3545; /* Red */
     font-weight: bold;
 }
-.result-item .expectation-above {
+
+.result-item .explanation {
     color: #007bff; /* Blue */
     font-weight: bold;
 }
@@ -203,34 +173,20 @@ button[type="submit"]:hover {
     cursor: pointer;
     font-size: 1.1em;
     display: block;
-    width: 200px;
-    margin: 20px auto;
-    transition: background-color 0.3s ease;
+    width: 200px; /* Adjust as needed */
+    margin: 20px auto 0 auto; /* Center the button */
 }
 
-#startAssessmentBtn:hover {
-    background-color: #0056b3;
+.assessment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
 }
 
-#sendEmailBtn {
-    background-color: #6c757d; /* Grey button for email */
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    display: block;
-    width: 250px;
-    margin: 20px auto;
-    transition: background-color 0.3s ease;
-}
-
-#sendEmailBtn:hover {
-    background-color: #5a6268;
-}
-
-#emailStatus {
-    text-align: center;
+.progress-indicator {
     font-weight: bold;
+    color: #0056b3;
 }

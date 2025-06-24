@@ -1,4 +1,4 @@
-const fetch = require('node-fetch'); // You might need to add "node-fetch" to your package.json dependencies
+const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST') {
@@ -11,8 +11,7 @@ exports.handler = async (event, context) => {
         return { statusCode: 400, body: JSON.stringify({ success: false, message: 'Turnstile token missing.' }) };
     }
 
-    // Retrieve your Secret Key from Netlify environment variables
-    const CLOUDFLARE_SECRET_KEY = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+    const CLOUDFLARE_SECRET_KEY = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEYS; // Use the provided env var name
 
     if (!CLOUDFLARE_SECRET_KEY) {
         console.error('Cloudflare Turnstile secret key is not set in environment variables.');
@@ -23,8 +22,6 @@ exports.handler = async (event, context) => {
     const formParams = new URLSearchParams();
     formParams.append('secret', CLOUDFLARE_SECRET_KEY);
     formParams.append('response', turnstileToken);
-    // Optional: for additional security checks, you can include the user's IP
-    // formParams.append('remoteip', event.headers['client-ip']);
 
     try {
         const response = await fetch(verificationURL, {
@@ -38,7 +35,6 @@ exports.handler = async (event, context) => {
         const data = await response.json();
 
         if (data.success) {
-            // Turnstile verification successful.
             return {
                 statusCode: 200,
                 body: JSON.stringify({ success: true, message: 'Verification successful!' }),
@@ -54,7 +50,7 @@ exports.handler = async (event, context) => {
         console.error('Error verifying Turnstile:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ success: false, message: 'Internal server error during verification.' }),
+            body: JSON.stringify({ success: false, message: 'Internal server error during Turnstile verification.', error: error.message }),
         };
     }
 };

@@ -1,7 +1,8 @@
 [build]
-  node_version = "22" # Or "20", whichever you prefer. Match your local Node.js version if possible.
+  node_version = "20" # Recommended for Netlify Functions, ensures modern JS features
   functions = "netlify/functions"
   publish = "."
   base = "/"
+
 [functions]
   directory = "netlify/functions"

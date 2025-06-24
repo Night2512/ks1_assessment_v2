@@ -5,63 +5,81 @@ exports.handler = async (event) => {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    // Updated to receive both text and HTML versions of results
     const { parentName, childName, parentEmail, resultsText, resultsHtml, keyStage } = JSON.parse(event.body);
 
-    // --- Configuration for SMTP2GO ---
     const smtpHost = process.env.SMTP2GO_HOST || 'mail.smtp2go.com';
-    const smtpPort = process.env.SMTP2GO_PORT || 2525; // Or 25, 8025, 587
-    const smtpUser = process.env.SMTP2GO_USER;       // Your SMTP2GO username
-    const smtpPass = process.env.SMTP2GO_PASSWORD;   // Your SMTP2GO API Key
+    const smtpPort = parseInt(process.env.SMTP2GO_PORT || '2525', 10);
+    const smtpUser = process.env.SMTP2GO_USER;
+    const smtpPass = process.env.SMTP2GO_PASSWORD;
 
-    const senderEmail = process.env.SENDER_EMAIL || 'your_sending_email@example.com'; // Your verified sender email
-    const adminRecipientEmail = process.env.RECIPIENT_EMAIL; // Your admin email from Netlify environment variables
+    const senderEmail = process.env.SENDER_EMAIL;
+    const adminRecipientEmail = process.env.RECIPIENT_EMAIL;
 
     // Basic validation
     if (!smtpUser || !smtpPass) {
+        console.error('SMTP2GO credentials not configured. SMTP_USER or SMTP_PASSWORD missing.');
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: 'SMTP2GO credentials not configured.' })
+            body: JSON.stringify({ message: 'Server configuration error: SMTP credentials missing.' })
         };
     }
-    if (!parentEmail || !senderEmail) {
+    if (!parentEmail || !senderEmail || !adminRecipientEmail) {
+        console.error(`Missing required email addresses. Parent: ${parentEmail}, Sender: ${senderEmail}, Admin: ${adminRecipientEmail}`);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ message: 'Server configuration error: Missing required email addresses for sending.' })
+        };
+    }
+    if (!resultsText || !resultsHtml) {
+        console.error('Missing email content. resultsText or resultsHtml is empty.');
         return {
             statusCode: 400,
-            body: JSON.stringify({ message: 'Missing required email addresses.' })
+            body: JSON.stringify({ message: 'Missing email content for results.' })
         };
     }
+
 
     let transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
-        secure: false, // true for 465, false for other ports like 587, 2525
+        secure: smtpPort === 465, // Use true for 465 (SSL/TLS), false for other ports like 587, 2525 (STARTTLS)
         auth: {
             user: smtpUser,
             pass: smtpPass
         },
-        tls: {
-            rejectUnauthorized: false // Use this if you encounter self-signed certificate issues, but prefer true for production
-        }
+        // tls: {
+        //     // Only use rejectUnauthorized: false if you are absolutely sure and understand the security implications
+        //     // For most production environments, it should be true or omitted if using well-known CAs
+        //     rejectUnauthorized: false
+        // }
     });
 
     const mailOptions = {
         from: senderEmail,
-        to: parentEmail,                     // Send to the parent's email
-        bcc: adminRecipientEmail,            // BCC a copy to your admin email
-        replyTo: parentEmail,                // Replies go to the parent
+        to: parentEmail,
+        bcc: adminRecipientEmail,
+        replyTo: parentEmail,
         subject: `${keyStage} Assessment Results for ${childName}`,
-        text: resultsText,                   // Plain text version for compatibility
-        html: resultsHtml                    // HTML version for presentable formatting
+        text: resultsText,
+        html: resultsHtml
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.messageId);
+        console.log('Preview URL (if available):', nodemailer.getTestMessageUrl(info)); // For testing with ethereal.email
         return {
             statusCode: 200,
             body: JSON.stringify({ message: 'Email sent successfully!' })
         };
     } catch (error) {
-        console.error('Error sending email:', error);
+        // Granular Error Reporting
+        console.error(`Error sending email for ${parentEmail} (Child: ${childName}):`, {
+            errorMessage: error.message,
+            errorCode: error.code, // Nodemailer specific error code
+            smtpResponse: error.response, // Raw SMTP response
+            // stack: error.stack // Uncomment for more detailed debugging in logs
+        });
         return {
             statusCode: 500,
             body: JSON.stringify({ message: 'Failed to send email.', error: error.message })
