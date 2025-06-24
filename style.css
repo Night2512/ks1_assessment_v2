@@ -200,7 +200,7 @@ button:disabled {
 /* New style for the actual question text content when displayed below the topic */
 .question-text-content {
     margin-top: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* Increased space after question text */
     font-weight: normal; /* Ensure it's not bold like the heading */
 }
 
@@ -209,4 +209,20 @@ button:disabled {
 #emailStatus {
     text-align: center;
     margin-top: 10px; /* Adjust spacing */
+}
+
+/* Turnstile centering */
+.turnstile-container {
+    margin: 20px auto; /* Centers the div horizontally */
+    width: fit-content; /* Allows content to define width, or set a specific width */
+    text-align: center; /* Centers inline content within the container if it doesn't take full width */
+}
+
+/* Outline for passage */
+.passage {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px; /* Space below the passage */
+    background-color: #f0f8ff; /* Light blue background for emphasis */
 }

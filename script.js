@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add image if specified in question object
         if (q.image) {
-            questionHtml += `<img src="${q.image}" alt="${q.imageAlt}" style="max-width: 150px; display: block; margin-bottom: 10px;">`;
+            questionHtml += `<img src="${q.image}" alt="${q.imageAlt}" style="max-width: 150px; display: block; margin-bottom: 15px;">`; // Increased margin-bottom
         }
 
         if (q.type === 'radio') {
