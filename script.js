@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         timeUpMessage: "Time's up! Your assessment has been automatically submitted.",
         expectationsBelow: "Below Expectations",
         expectationsMeets: "Meets Expectations",
-        expectationsAbove: "Above Expectations"
+        expectationsAbove: "Above Expectations",
+        resultsEmailMessage: "Your full detailed results have been sent to your email address." // New custom message
     };
 
     // Apply customizable content
@@ -37,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextQuestionBtn = document.getElementById('nextQuestionBtn');
     const submitAssessmentBtn = document.getElementById('submitAssessmentBtn');
     const resultsDiv = document.getElementById('results');
-    const detailedResultsDiv = document.getElementById('detailedResults');
+    const detailedResultsDiv = document.getElementById('detailedResults'); // This will be cleared
     const overallScoreElement = document.getElementById('overallScore');
     const overallExpectationsElement = document.getElementById('overallExpectations');
     const timerDisplay = document.getElementById('time');
@@ -151,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'q12',
             type: 'text',
             question: "Write a sentence using the word 'blue'.",
-            correctAnswer: "The sky is blue.", // Assuming this as the example answer
+            correctAnswer: "The sky is blue.", // This is now an example, not a strict match
             explanation: "An example sentence is 'The sky is blue.' (Other grammatically correct sentences using 'blue' would also be acceptable)."
         },
         {
@@ -419,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsDiv.style.display = 'block';
 
         let score = 0;
-        let resultsHtmlContent = `<h2>Detailed Results</h2>`;
+        let resultsHtmlEmailContent = ''; // This will store the detailed HTML for email
         let resultsTextContent = `Detailed Results:\n`;
         const scoreThresholds = {
             below: questions.length * 0.33, // Example: Below 33% is Below Expectations
@@ -432,6 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let isCorrect = false;
             let explanation = q.explanation || '';
             let userAnswerDisplay = userAnswer === '' ? 'No Answer' : userAnswer;
+            let questionScore = 0; // 0 or 1 for each question
 
             if (q.type === 'radio') {
                 isCorrect = userAnswer === q.correctAnswer;
@@ -439,26 +441,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     userAnswerDisplay = q.options[userAnswer]; // Display the option text, not just the key
                 }
             } else if (q.type === 'text') {
-                isCorrect = userAnswer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
+                if (q.id === 'q12') {
+                    // Custom logic for Q12: Must start with a capital letter, contain 'blue', and end with a full stop
+                    const trimmedAnswer = userAnswer.trim();
+                    isCorrect = trimmedAnswer.length > 0 &&
+                                trimmedAnswer[0] === trimmedAnswer[0].toUpperCase() &&
+                                /[A-Z]/.test(trimmedAnswer[0]) && // Ensure the first char is an actual letter
+                                trimmedAnswer.toLowerCase().includes('blue') &&
+                                trimmedAnswer.endsWith('.');
+                } else {
+                    isCorrect = userAnswer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
+                }
             } else if (q.type === 'number') {
                 isCorrect = parseInt(userAnswer) === q.correctAnswer;
             }
 
             if (isCorrect) {
                 score++;
+                questionScore = 1;
             }
 
-            // Prepare HTML results
-            resultsHtmlContent += `
-                <div class="result-item">
-                    <p><strong>${index + 1}. ${q.question}</strong></p>
-                    <p>Your Answer: <span class="${isCorrect ? 'correct' : 'incorrect'}">${userAnswerDisplay}</span></p>
-                    <p>Correct Answer: <span class="correct">${q.correctAnswerDisplay || q.correctAnswer}</span></p>
-                    ${explanation ? `<p class="explanation">Explanation: ${explanation}</p>` : ''}
+            // Prepare HTML results (for email) based on the provided sample
+            resultsHtmlEmailContent += `
+                <div class="question-item">
+                    <h4>Q${index + 1}. ${q.question}</h4>
+                    <p><strong>Your Answer:</strong> ${userAnswerDisplay}</p>
+                    <p><strong>Correct Answer:</strong> ${q.correctAnswerDisplay || q.correctAnswer}</p>
+                    <p><strong>Score:</strong> ${questionScore}/1</p>
+                    <p><strong>Outcome:</strong> <span class="${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Correct' : 'Incorrect'}</span></p>
+                    ${explanation ? `<p>Explanation: ${explanation}</p>` : ''}
                 </div>
             `;
 
-            // Prepare Plain Text results
+            // Prepare Plain Text results (for email)
             resultsTextContent += `\nQuestion ${index + 1}: ${q.question}\n`;
             resultsTextContent += `Your Answer: ${userAnswerDisplay} (${isCorrect ? 'Correct' : 'Incorrect'})\n`;
             resultsTextContent += `Correct Answer: ${q.correctAnswerDisplay || q.correctAnswer}\n`;
@@ -467,16 +482,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        detailedResultsDiv.innerHTML = resultsHtmlContent;
+        // ONLY SHOW SUMMARY ON RESULTS PAGE
+        detailedResultsDiv.innerHTML = `<p>${CUSTOM_CONTENT.resultsEmailMessage}</p>`; // Display custom message
         overallScoreElement.textContent = `Overall Score: ${score}/${questions.length}`;
 
         let overallExpectations = '';
+        let expectationsClass = ''; // To apply correct CSS class in email
         if (score < scoreThresholds.below) {
             overallExpectations = CUSTOM_CONTENT.expectationsBelow;
+            expectationsClass = 'expectation-below';
         } else if (score >= scoreThresholds.meets) {
             overallExpectations = CUSTOM_CONTENT.expectationsAbove;
+            expectationsClass = 'expectation-above';
         } else {
             overallExpectations = CUSTOM_CONTENT.expectationsMeets;
+            expectationsClass = 'expectation-meets';
         }
         overallExpectationsElement.textContent = `Overall Performance: ${overallExpectations}`;
 
@@ -501,14 +521,44 @@ Overall Performance: ${overallExpectations}
 ${resultsTextContent}
         `;
 
+        // Full HTML for email based on provided sample
         assessmentHtmlResults = `
-            <h1>${CURRENT_KEY_STAGE} Assessment Results for ${childName}</h1>
-            <p><strong>Parent Name:</strong> ${parentName}</p>
-            <p><strong>Parent Email:</strong> ${parentEmail}</p>
-            <p><strong>Overall Score:</strong> ${score}/${questions.length}</p>
-            <p><strong>Overall Performance:</strong> ${overallExpectations}</p>
-            ${assessmentSubmittedByTime ? `<p style="color:#dc3545;font-weight:bold;">${CUSTOM_CONTENT.timeUpMessage}</p>` : ''}
-            ${resultsHtmlContent}
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+    h2, h3, h4 { color: #0056b3; }
+    .question-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+    .question-item:last-child { border-bottom: none; }
+    .score-summary { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #007bff; }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    .expectation-meets { color: #28a745; font-weight: bold; }
+    .expectation-below { color: #dc3545; font-weight: bold; }
+    .expectation-above { color: #007bff; font-weight: bold; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h2>${CURRENT_KEY_STAGE} Assessment Results for ${childName}</h2>
+        <p><strong>Parent Name:</strong> ${parentName}</p>
+        <p><strong>Parent Email:</strong> ${parentEmail}</p>
+        <p><strong>Overall Score:</strong> ${score}/${questions.length}</p>
+        <p><strong>Overall Performance:</strong> <span class="${expectationsClass}">${overallExpectations}</span></p>
+        ${assessmentSubmittedByTime ? `<p style="color:#dc3545;font-weight:bold;">${CUSTOM_CONTENT.timeUpMessage}</p>` : ''}
+        
+        ${resultsHtmlEmailContent} <div class="score-summary">
+            <h3>Overall Score: ${score}/${questions.length}</h3>
+            <h3>Overall Outcome: <span class="${expectationsClass}">${overallExpectations}</span></h3>
+        </div>
+        <p>If you have any questions, please reply to this email.</p>
+        <p>Best regards,<br>Mona Teaches</p>
+    </div>
+</body>
+</html>
         `;
 
         // Immediately send results email and save to DB
