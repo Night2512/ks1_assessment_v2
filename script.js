@@ -1,3 +1,4 @@
+// Filename: script.js
 document.addEventListener('DOMContentLoaded', () => {
     // --- Customizable Content (for Admins) ---
     const CUSTOM_CONTENT = {
@@ -23,351 +24,290 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mainTitleReplicated').textContent = CUSTOM_CONTENT.mainTitle;
     document.getElementById('infoHeading').textContent = CUSTOM_CONTENT.infoHeading;
     document.getElementById('infoInstructions').textContent = CUSTOM_CONTENT.infoInstructions;
-    document.getElementById('assessmentIntroText').textContent = CUSTOM_CONTENT.assessmentIntro; // Apply 15-min text
+    document.getElementById('assessmentIntro').textContent = CUSTOM_CONTENT.assessmentIntro;
     document.getElementById('securityCheckText').textContent = CUSTOM_CONTENT.securityCheckText;
     document.getElementById('resultsHeading').textContent = CUSTOM_CONTENT.resultsHeading;
+    // No need to set assessmentHeading here, it's dynamic.
 
     // --- DOM Elements ---
-    const infoCollectionSection = document.getElementById('infoCollection');
-    const assessmentSection = document.getElementById('assessmentSection');
-    const resultsSection = document.getElementById('results');
+    const infoCollectionDiv = document.getElementById('infoCollection');
+    const assessmentSectionDiv = document.getElementById('assessmentSection');
+    const resultsSectionDiv = document.getElementById('results');
     const infoForm = document.getElementById('infoForm');
-    const parentNameInput = document.getElementById('parentName');
-    const childNameInput = document.getElementById('childName');
-    const parentEmailInput = document.getElementById('parentEmail');
-    const keyStageSelect = document.getElementById('keyStage');
-    const startAssessmentBtn = document.getElementById('startAssessmentBtn'); // Ensure this is correctly retrieved
     const assessmentForm = document.getElementById('assessmentForm');
-    const questionsContainer = document.getElementById('questionsContainer');
+    const startAssessmentBtn = document.getElementById('startAssessmentBtn');
     const nextQuestionBtn = document.getElementById('nextQuestionBtn');
     const submitAssessmentBtn = document.getElementById('submitAssessmentBtn');
-    const timeDisplay = document.getElementById('time');
-    const currentQNumSpan = document.getElementById('currentQNum');
-    const totalQNumSpan = document.getElementById('totalQNum');
-    const detailedResultsDiv = document.getElementById('detailedResults');
-    const overallScoreH3 = document.getElementById('overallScore');
-    const overallExpectationsH3 = document.getElementById('overallExpectations');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const timerDisplay = document.getElementById('time');
+    const currentQuestionNumDisplay = document.getElementById('currentQNum');
+    const totalQuestionNumDisplay = document.getElementById('totalQNum');
     const sendEmailBtn = document.getElementById('sendEmailBtn');
-    const emailStatusP = document.getElementById('emailStatus');
+    const emailStatusPara = document.getElementById('emailStatus');
 
+    let parentName, childName, parentEmail;
+    let questions = []; // Array to hold questions from JSON
+    let userAnswers = []; // Array to hold user's answers
     let currentQuestionIndex = 0;
-    let score = 0;
-    let questions = []; // This will be populated from the JSON
+    let timeLeft = 15 * 60; // 15 minutes in seconds
     let timer;
-    const TIME_LIMIT = 15 * 60; // 15 minutes in seconds
-    let timeLeft = TIME_LIMIT;
 
-    // --- Data Objects ---
-    let assessmentData = {
-        parentName: '',
-        childName: '',
-        parentEmail: '',
-        keyStage: '',
-        score: 0,
-        totalQuestions: 0,
-        expectations: '',
-        detailedResults: []
-    };
+    // --- Helper Functions ---
 
-    // --- Utility Functions ---
-    function showSection(section) {
-        infoCollectionSection.style.display = 'none';
-        assessmentSection.style.display = 'none';
-        resultsSection.style.display = 'none';
-        section.style.display = 'block';
-    }
-
+    // Function to shuffle an array (Fisher-Yates algorithm)
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
         }
     }
 
-    // --- Timer Functions ---
-    function formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    function startTimer() {
-        timer = setInterval(() => {
-            timeLeft--;
-            timeDisplay.textContent = formatTime(timeLeft);
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                submitAssessment(true); // Automatically submit when time is up
-            }
-        }, 1000);
-    }
-
-    // --- Assessment Flow Functions ---
-    async function loadQuestions() {
+    // Function to fetch questions from JSON
+    async function fetchQuestions() {
         try {
             const response = await fetch('questions.json');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data = await response.json();
-            questions = data.questions;
-            shuffleArray(questions); // Randomize question order
-            assessmentData.totalQuestions = questions.length;
-            totalQNumSpan.textContent = questions.length;
-            displayQuestion();
+            questions = await response.json();
+            shuffleArray(questions); // Shuffle questions on load
+            totalQuestionNumDisplay.textContent = questions.length;
         } catch (error) {
-            console.error('Error loading questions:', error);
-            questionsContainer.innerHTML = '<p>Error loading assessment questions. Please try again later.</p>';
-            nextQuestionBtn.disabled = true;
-            submitAssessmentBtn.disabled = true;
+            console.error('Error fetching questions:', error);
+            alert('Could not load assessment questions. Please try refreshing the page.');
         }
     }
 
-    function displayQuestion() {
-        if (questions.length === 0) {
-            questionsContainer.innerHTML = '<p>No questions available.</p>';
-            nextQuestionBtn.style.display = 'none';
-            submitAssessmentBtn.style.display = 'block';
-            submitAssessmentBtn.disabled = true;
-            return;
-        }
+    // Function to display a question
+    function showQuestion(index) {
+        if (questions.length === 0) return;
 
-        const question = questions[currentQuestionIndex];
-        currentQNumSpan.textContent = currentQuestionIndex + 1;
+        const q = questions[index];
+        questionsContainer.innerHTML = ''; // Clear previous question
 
-        let optionsHtml = '';
-        const inputType = question.type === 'multiple-choice' ? 'radio' : 'text';
+        const questionBlock = document.createElement('div');
+        questionBlock.className = 'question-block';
 
-        if (question.type === 'multiple-choice' && question.options) {
-            optionsHtml = question.options.map((option, idx) => `
-                <div class="option-block">
-                    <input type="${inputType}" id="option${idx}" name="answer" value="${option}" required>
-                    <label for="option${idx}">${option}</label>
-                </div>
-            `).join('');
-        } else if (question.type === 'text-input') {
-            optionsHtml = `
-                <div class="option-block">
-                    <label for="textAnswer">Your Answer:</label>
-                    <input type="${inputType}" id="textAnswer" name="answer" required>
-                </div>
-            `;
-        }
-
-        questionsContainer.innerHTML = `
-            <div class="question-block">
-                <h3>${question.topic}</h3>
-                <p class="question-text-content">${question.question}</p>
-                ${optionsHtml}
-            </div>
+        questionBlock.innerHTML = `
+            <h3>${q.topic}</h3>
+            <p class="question-text-content">${q.question}</p>
+            <label for="answerInput">Your Answer:</label>
+            <input type="text" id="answerInput" name="answerInput" value="${userAnswers[index] || ''}" required>
         `;
+        questionsContainer.appendChild(questionBlock);
 
-        // Manage button visibility
-        if (currentQuestionIndex === questions.length - 1) {
+        currentQuestionNumDisplay.textContent = index + 1;
+
+        // Show/hide navigation buttons
+        if (index === questions.length - 1) {
             nextQuestionBtn.style.display = 'none';
             submitAssessmentBtn.style.display = 'block';
         } else {
             nextQuestionBtn.style.display = 'block';
             submitAssessmentBtn.style.display = 'none';
         }
+        document.getElementById('answerInput').focus(); // Auto-focus on the answer input
     }
 
+    // Function to handle next question
     function nextQuestion() {
-        const selectedAnswer = document.querySelector('input[name="answer"]:checked')?.value || document.getElementById('textAnswer')?.value;
-
-        if (!selectedAnswer) {
-            alert('Please select or enter an answer before proceeding.');
-            return;
+        // Save current answer before moving
+        const answerInput = document.getElementById('answerInput');
+        if (answerInput) {
+            userAnswers[currentQuestionIndex] = answerInput.value.trim();
         }
 
-        recordAnswer(selectedAnswer);
-
-        if (currentQuestionIndex < questions.length - 1) {
-            currentQuestionIndex++;
-            displayQuestion();
-        } else {
-            // This case should ideally be handled by submitAssessmentBtn becoming visible
-            // and the user clicking it. But as a fallback:
-            submitAssessment();
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            showQuestion(currentQuestionIndex);
         }
     }
 
-    function recordAnswer(userAnswer) {
-        const question = questions[currentQuestionIndex];
-        let isCorrect = false;
-        let outcome = 'Incorrect';
-        let questionScore = 0;
-        let maxScore = 1;
+    // Timer functions
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-        if (question.type === 'multiple-choice') {
-            isCorrect = userAnswer === question.correctAnswer;
-        } else if (question.type === 'text-input') {
-            // Case-insensitive comparison for text answers
-            isCorrect = userAnswer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                alert(CUSTOM_CONTENT.timeUpMessage);
+                submitAssessment();
+            }
+        }, 1000);
+    }
+
+    function getExpectations(score, totalQuestions) {
+        const percentage = (score / totalQuestions) * 100;
+        if (percentage >= 90) {
+            return CUSTOM_CONTENT.expectationsAbove; // "Above Expectations"
+        } else if (percentage >= 60) {
+            return CUSTOM_CONTENT.expectationsMeets; // "Meets Expectations"
+        } else {
+            return CUSTOM_CONTENT.expectationsBelow; // "Below Expectations"
+        }
+    }
+
+    function getExpectationMessage(expectation) {
+        if (expectation === CUSTOM_CONTENT.expectationsAbove) {
+            return "Excellent understanding";
+        } else if (expectation === CUSTOM_CONTENT.expectationsMeets) {
+            return "Good understanding";
+        } else {
+            return "Further practice needed";
+        }
+    }
+
+    // Function to submit assessment
+    function submitAssessment() {
+        clearInterval(timer); // Stop the timer
+
+        // Save the last answer if assessment submitted by button before timer runs out
+        const answerInput = document.getElementById('answerInput');
+        if (answerInput && currentQuestionIndex === questions.length - 1) {
+            userAnswers[currentQuestionIndex] = answerInput.value.trim();
         }
 
-        if (isCorrect) {
-            score++;
-            questionScore = 1;
-            outcome = 'Correct';
-        }
+        // Collect all data
+        const detailedResults = [];
+        let score = 0; // Initialize total score
+        const totalQuestions = questions.length;
 
-        assessmentData.detailedResults.push({
-            question: question.question,
-            topic: question.topic,
-            user_answer: userAnswer,
-            correct_answer: question.correctAnswer,
-            outcome: outcome,
-            score: questionScore,
-            max_score: maxScore
+        questions.forEach((q, index) => {
+            const userAnswer = userAnswers[index];
+            const correctAnswer = q.correctAnswer;
+            // Simple string comparison, case-insensitive and trim whitespace
+            const isCorrect = (userAnswer || '').toString().toLowerCase() === (correctAnswer || '').toString().toLowerCase();
+
+            if (isCorrect) {
+                score++; // Increment overall score
+            }
+
+            detailedResults.push({
+                question: q.question,
+                user_answer: userAnswer,
+                correct_answer: correctAnswer,
+                outcome: isCorrect ? 'Correct' : 'Incorrect',
+                score: isCorrect ? 1 : 0, // Score for individual question
+                max_score: 1
+            });
+        });
+
+        const overallScoreElement = document.getElementById('overallScore');
+        const overallExpectationsElement = document.getElementById('overallExpectations');
+        const detailedResultsDiv = document.getElementById('detailedResults');
+
+        // Display results
+        const finalScoreText = `${score}/${totalQuestions}`;
+        overallScoreElement.innerHTML = `<h3>Overall Score: ${finalScoreText}</h3>`;
+        const expectations = getExpectations(score, totalQuestions);
+        overallExpectationsElement.innerHTML = `<h3>Overall Outcome: <span class="expectation-${expectations.toLowerCase().replace(/ /g, '-')}" style="font-weight: bold;">${expectations} (${getExpectationMessage(expectations)})</span></h3>`;
+
+        // Generate and display detailed results for the results section
+        let detailedHtml = '';
+        detailedResults.forEach(item => {
+            const outcomeClass = item.outcome === 'Correct' ? 'correct' : 'incorrect';
+            detailedHtml += `
+                <div class="question-item">
+                    <h4>${item.question}</h4>
+                    <p><strong>Your Answer:</strong> ${item.user_answer || 'N/A'}</p>
+                    <p><strong>Correct Answer:</strong> ${item.correct_answer || 'N/A'}</p>
+                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${item.outcome || 'Not available'}</span></p>
+                </div>
+            `;
+        });
+        detailedResultsDiv.innerHTML = detailedHtml;
+
+        // Display results section and hide assessment
+        assessmentSectionDiv.style.display = 'none';
+        resultsSectionDiv.style.display = 'block';
+        sendEmailBtn.style.display = 'block'; // Show the send email button
+        document.getElementById('detailedResults').insertAdjacentHTML('beforebegin', `<p>${CUSTOM_CONTENT.resultsEmailMessage}</p>`);
+
+
+        // Send data to Netlify Function
+        fetch('/.netlify/functions/save-submission', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                parentName: parentName,
+                childName: childName,
+                parentEmail: parentEmail,
+                score: score, // Use the numerical score directly
+                expectations: expectations,
+                detailedResults: detailedResults,
+                totalQuestions: totalQuestions // totalQuestions is already numerical
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                console.log(data.message);
+            } else {
+                console.error('Error saving submission:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Network error saving submission:', error);
         });
     }
 
-    function calculateOverallExpectations() {
-        const percentage = (score / assessmentData.totalQuestions) * 100;
-        if (percentage >= 90) {
-            return CUSTOM_CONTENT.expectationsAbove + " (Excellent understanding)";
-        } else if (percentage >= 70) {
-            return CUSTOM_CONTENT.expectationsMeets + " (Good understanding)";
-        } else {
-            return CUSTOM_CONTENT.expectationsBelow + " (Needs improvement)";
-        }
-    }
-
-    async function submitAssessment(timeUp = false) {
-        clearInterval(timer); // Stop the timer
-
-        // Record the answer for the last question if not already recorded
-        const selectedAnswer = document.querySelector('input[name="answer"]:checked')?.value || document.getElementById('textAnswer')?.value;
-        if (selectedAnswer) {
-            recordAnswer(selectedAnswer);
-        }
-
-        if (timeUp) {
-            alert(CUSTOM_CONTENT.timeUpMessage);
-        }
-
-        assessmentData.score = score;
-        assessmentData.expectations = calculateOverallExpectations();
-
-        showSection(resultsSection);
-        overallScoreH3.textContent = `Overall Score: ${assessmentData.score}/${assessmentData.totalQuestions}`;
-        overallExpectationsH3.textContent = `Overall Outcome: ${assessmentData.expectations}`;
-
-        detailedResultsDiv.innerHTML = `<p>${CUSTOM_CONTENT.resultsEmailMessage}</p>`; // Show a message that results will be emailed
-        sendEmailBtn.style.display = 'block'; // Make the send email button visible
-    }
-
-    // --- Event Listeners ---
-
-    // Info Form Submission
-    infoForm.addEventListener('submit', (e) => {
-        e.preventDefault(); // Prevent default form submission
-
-        // Only proceed if the button is enabled (meaning Turnstile passed)
-        if (startAssessmentBtn.disabled) {
-            alert('Please complete the security check.');
-            return;
-        }
-
-        assessmentData.parentName = parentNameInput.value.trim();
-        assessmentData.childName = childNameInput.value.trim();
-        assessmentData.parentEmail = parentEmailInput.value.trim();
-        assessmentData.keyStage = keyStageSelect.value;
-
-        if (assessmentData.parentName && assessmentData.childName && assessmentData.parentEmail && assessmentData.keyStage) {
-            showSection(assessmentSection);
-            loadQuestions();
-            startTimer();
-        } else {
-            alert('Please fill in all required fields.');
-        }
-    });
-
-    // Send Email Button
+    // Function to send results email
     sendEmailBtn.addEventListener('click', async () => {
-        emailStatusP.textContent = CUSTOM_CONTENT.emailSending;
-        sendEmailBtn.disabled = true; // Disable to prevent multiple clicks
+        emailStatusPara.textContent = CUSTOM_CONTENT.emailSending;
+        emailStatusPara.style.color = '#0056b3';
 
-        try {
-            const response = await fetch('/.netlify/functions/send-email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    parentName: assessmentData.parentName,
-                    childName: assessmentData.childName,
-                    parentEmail: assessmentData.parentEmail,
-                    keyStage: assessmentData.keyStage,
-                    resultsText: `Overall Score: ${assessmentData.score}/${assessmentData.totalQuestions}\nOverall Outcome: ${assessmentData.expectations}`,
-                    resultsHtml: generateResultsEmailHtml(assessmentData) // Function to generate HTML email content
-                }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                emailStatusP.textContent = CUSTOM_CONTENT.emailSentSuccess;
-                emailStatusP.style.color = 'green';
-            } else {
-                emailStatusP.textContent = `${CUSTOM_CONTENT.emailFailed} Error: ${data.error || 'Unknown error'}`;
-                emailStatusP.style.color = 'red';
-                console.error('Email sending error:', data);
-            }
-        } catch (error) {
-            emailStatusP.textContent = CUSTOM_CONTENT.networkError;
-            emailStatusP.style.color = 'red';
-            console.error('Network or other error sending email:', error);
-        } finally {
-            sendEmailBtn.disabled = false;
-        }
-    });
-
-    // Helper function to generate HTML for the email
-    function generateResultsEmailHtml(data) {
-        let html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-            <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
-                h2, h3, h4 { color: #0056b3; }
-                .question-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
-                .question-item:last-child { border-bottom: none; }
-                .score-summary { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #007bff; }
-                .correct { color: green; }
-                .incorrect { color: red; }
-                .expectation-meets { color: #28a745; font-weight: bold; }
-                .expectation-below { color: #dc3545; font-weight: bold; }
-                .expectation-above { color: #007bff; font-weight: bold; }
-            </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h2>${data.keyStage} Assessment Results</h2>
-                    <p>Dear ${data.parentName},</p>
-                    <p>Here are the results for ${data.childName}'s recent assessment:</p>
-        `;
-
-        data.detailedResults.forEach((item, index) => {
+        // Reconstruct results HTML for email
+        let emailDetailedHtml = '';
+        detailedResults.forEach(item => {
             const outcomeClass = item.outcome === 'Correct' ? 'correct' : 'incorrect';
-            html += `
+            emailDetailedHtml += `
                 <div class="question-item">
-                    <h4>Q${index + 1}. ${escapeHtml(item.topic || 'General Question')}</h4>
-                    <p><strong>Your Answer:</strong> ${escapeHtml(item.user_answer || 'N/A')}</p>
-                    <p><strong>Correct Answer:</strong> ${escapeHtml(item.correct_answer || 'N/A')}</p>
-                    <p><strong>Score:</strong> ${escapeHtml(item.score || '0')}/${escapeHtml(item.max_score || '1')}</p>
-                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${escapeHtml(item.outcome || 'Not available')}</span></p>
+                    <h4>${item.question}</h4>
+                    <p><strong>Your Answer:</strong> ${item.user_answer || 'N/A'}</p>
+                    <p><strong>Correct Answer:</strong> ${item.correct_answer || 'N/A'}</p>
+                    <p><strong>Score:</strong> ${item.score || 0}/${item.max_score || 1}</p>
+                    <p><strong>Outcome:</strong> <span class="${outcomeClass}">${item.outcome || 'Not available'}</span></p>
                 </div>
             `;
         });
 
-        html += `
+        const overallScoreText = document.getElementById('overallScore').textContent;
+        const overallExpectationsText = document.getElementById('overallExpectations').textContent;
+
+        const emailHtmlContent = `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+                    h2, h3, h4 { color: #0056b3; }
+                    .question-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+                    .question-item:last-child { border-bottom: none; }
+                    .score-summary { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #007bff; }
+                    .correct { color: green; }
+                    .incorrect { color: red; }
+                    .expectation-meets { color: #28a745; font-weight: bold; }
+                    .expectation-below { color: #dc3545; font-weight: bold; }
+                    .expectation-above { color: #007bff; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>Key Stage 2 Assessment Results</h2>
+                    <p>Dear ${parentName},</p>
+                    <p>Here are the assessment results for ${childName}:</p>
+                    <div class="detailed-questions">
+                        ${emailDetailedHtml}
+                    </div>
                     <div class="score-summary">
-                        <h3>Overall Score: ${data.score}/${data.totalQuestions}</h3>
-                        <h3>Overall Outcome: <span class="${getExpectationClass(data.expectations)}">${data.expectations}</span></h3>
+                        <h3>${overallScoreText}</h3>
+                        <h3>${overallExpectationsText}</h3>
                     </div>
                     <p>If you have any questions, please reply to this email.</p>
                     <p>Best regards,<br>Mona Teaches</p>
@@ -375,30 +315,68 @@ document.addEventListener('DOMContentLoaded', () => {
             </body>
             </html>
         `;
-        return html;
-    }
 
-    function getExpectationClass(expectations) {
-        if (expectations.includes("Above Expectations")) return "expectation-above";
-        if (expectations.includes("Meets Expectations")) return "expectation-meets";
-        if (expectations.includes("Below Expectations")) return "expectation-below";
-        return "";
-    }
+        try {
+            const response = await fetch('/.netlify/functions/send-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    parentName: parentName,
+                    childName: childName,
+                    parentEmail: parentEmail,
+                    resultsText: `Overall Score: ${overallScoreText}\nOverall Outcome: ${overallExpectationsText}\n\nDetailed results are attached.`, // Simple text version
+                    resultsHtml: emailHtmlContent,
+                    keyStage: "Key Stage 1" // You can make this dynamic if needed
+                })
+            });
 
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
+            const data = await response.json();
+            if (response.ok) {
+                emailStatusPara.textContent = CUSTOM_CONTENT.emailSentSuccess;
+                emailStatusPara.style.color = 'green';
+            } else {
+                emailStatusPara.textContent = `${CUSTOM_CONTENT.emailFailed} ${data.error || ''}`;
+                emailStatusPara.style.color = 'red';
+                console.error('Error sending email:', data.error);
+            }
+        } catch (error) {
+            emailStatusPara.textContent = CUSTOM_CONTENT.networkError;
+            emailStatusPara.style.color = 'red';
+            console.error('Network error sending email:', error);
+        }
+    });
 
-    // --- Cloudflare Turnstile Callbacks ---
+
+    // --- Event Listeners ---
+
+    // Initial fetch of questions
+    fetchQuestions();
+
+    // Info Form Submission (for Start Assessment button)
+    infoForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // Store user info
+        parentName = document.getElementById('parentName').value;
+        childName = document.getElementById('childName').value;
+        parentEmail = document.getElementById('parentEmail').value;
+
+        infoCollectionDiv.style.display = 'none'; // Hide info collection
+        assessmentSectionDiv.style.display = 'block'; // Show assessment section
+
+        // Initialize and display first question
+        currentQuestionIndex = 0;
+        showQuestion(currentQuestionIndex);
+        startTimer(); // Start the assessment timer
+    });
+
+    // Cloudflare Turnstile integration
+    const startAssessmentBtn = document.getElementById('startAssessmentBtn'); // Ensure this is defined here
+    startAssessmentBtn.disabled = true; // Initially disabled
+
     window.turnstileSuccessCallback = function(token) {
-        // You can optionally verify the token server-side (optional but recommended)
+        // Verify token server-side (optional but recommended)
         fetch('/.netlify/functions/verify-turnstile', {
             method: 'POST',
             headers: {
