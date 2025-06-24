@@ -14,7 +14,7 @@
         <div id="infoCollection" class="section">
             <h2 id="infoHeading">Start Your Assessment</h2>
             <p id="infoInstructions">Please provide the following information to begin the assessment:</p>
-            <form id="infoForm">
+            <p id="assessmentIntroText"></p> <form id="infoForm">
                 <div class="question-block">
                     <label for="parentName">Parent's Name:</label>
                     <input type="text" id="parentName" name="parentName" required>
@@ -27,17 +27,18 @@
                     <label for="parentEmail">Parent's Email Address:</label>
                     <input type="email" id="parentEmail" name="parentEmail" required>
                 </div>
-				<div class="passage">
-                    <p id="assessmentIntro"></p>
+                <div class="question-block">
+                    <label for="keyStage">Select Key Stage:</label>
+                    <select id="keyStage" name="keyStage" required>
+                        <option value="">--Please choose an option--</option>
+                        <option value="Key Stage 1">Key Stage 1</option>
+                        <option value="Key Stage 2">Key Stage 2</option>
+                    </select>
                 </div>
 
-				<div>
-                    <button type="submit" id="startAssessmentBtn" disabled>Start Assessment</button>
-                    <p></p>
-                    <div class="turnstile-container">
-                        <div class="cf-turnstile" data-sitekey="0x4AAAAAABhJZmNH0OLuZAif" data-callback="turnstileCallback" data-error-callback="turnstileErrorCallback"></div>
-                        <p id="securityCheckText" class="small-text"></p>
-                    </div>
+                <button type="submit" id="startAssessmentBtn" disabled>Start Assessment</button> <div class="turnstile-container">
+                    <div class="cf-turnstile" data-sitekey="0x4AAAAAABhJZmNH0OLuZAif" data-callback="turnstileSuccessCallback" data-error-callback="turnstileErrorCallback"></div>
+                    <p id="securityCheckText" class="small-text"></p>
                 </div>
             </form>
         </div>
@@ -65,7 +66,7 @@
             <div id="detailedResults"></div>
             <h3 id="overallScore"></h3>
             <h3 id="overallExpectations"></h3>
-            <button id="sendEmailBtn" style="display:none;">Send Results to Parents</button>
+            <button type="button" id="sendEmailBtn" style="display:none;">Send Results to Parents</button>
             <p id="emailStatus" style="margin-top: 10px;"></p>
         </div>
     </div>
