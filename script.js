@@ -711,6 +711,21 @@ ${resultsTextContent}
         alert('There was an issue loading the security check. Please refresh the page.');
     };
 
+    // New: Prevent unintended form submission on Enter key press within assessment questions
+    assessmentForm.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const focusedElement = e.target;
+            // Check if the focused element is a text or number input
+            if (focusedElement.tagName.toLowerCase() === 'input' &&
+                (focusedElement.type === 'text' || focusedElement.type === 'number')) {
+                e.preventDefault(); // Stop the default form submission
+                // Optionally, trigger the "Next Question" button click
+                // This makes hitting enter move to the next question for text/number inputs
+                nextQuestionBtn.click();
+            }
+        }
+    });
+
     // Next Question Button
     nextQuestionBtn.addEventListener('click', nextQuestion);
 
