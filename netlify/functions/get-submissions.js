@@ -37,13 +37,19 @@ exports.handler = async (event, context) => {
 
   try {
     const pool = await getDbConnection();
-    // Querying the 'assessments' table
-    const result = await pool.query('SELECT id, child_name, parent_name, parent_email, score, total_questions, expectations, submission_time FROM assessments ORDER BY submission_time DESC');
+    // Corrected: Querying 'submitted_at' column instead of 'submission_time'
+    const result = await pool.query('SELECT id, child_name, parent_name, parent_email, score, total_questions, expectations, submitted_at FROM assessments ORDER BY submitted_at DESC');
     
-    // Convert submission_time to ISO string or a more readable format if needed by frontend
+    // Map the 'submitted_at' column to 'submission_time' for frontend consistency
     const submissions = result.rows.map(row => ({
-      ...row,
-      submission_time: new Date(row.submission_time).toISOString(), // Or .toLocaleString()
+      id: row.id,
+      child_name: row.child_name,
+      parent_name: row.parent_name,
+      parent_email: row.parent_email,
+      score: row.score,
+      total_questions: row.total_questions,
+      expectations: row.expectations,
+      submission_time: new Date(row.submitted_at).toISOString(), // Use submitted_at and format
     }));
 
     return {
