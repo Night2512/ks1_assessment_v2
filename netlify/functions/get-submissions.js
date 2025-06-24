@@ -38,9 +38,11 @@ exports.handler = async (event, context) => {
   try {
     const pool = await getDbConnection();
     // Corrected: Querying 'submitted_at' column instead of 'submission_time'
-    const result = await pool.query('SELECT id, child_name, parent_name, parent_email, score, total_questions, expectations, submitted_at FROM assessments ORDER BY submitted_at DESC');
+    // Also INCLUDE 'detailed_results' in the SELECT statement
+    const result = await pool.query('SELECT id, child_name, parent_name, parent_email, score, total_questions, expectations, submitted_at, detailed_results FROM assessments ORDER BY submitted_at DESC');
     
     // Map the 'submitted_at' column to 'submission_time' for frontend consistency
+    // And also include 'detailed_results' in the mapped object
     const submissions = result.rows.map(row => ({
       id: row.id,
       child_name: row.child_name,
@@ -50,6 +52,7 @@ exports.handler = async (event, context) => {
       total_questions: row.total_questions,
       expectations: row.expectations,
       submission_time: new Date(row.submitted_at).toISOString(), // Use submitted_at and format
+      detailed_results: row.detailed_results // Include detailed_results
     }));
 
     return {
