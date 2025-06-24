@@ -23,6 +23,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Key for storing the password in localStorage after successful login
     const ADMIN_PASSWORD_STORAGE_KEY = 'adminAuthPassword';
 
+    // --- HELPER FUNCTION: Escape HTML characters ---
+    function escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            return unsafe; // Return as-is if not a string (e.g., number, null, undefined)
+        }
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;"); // Use &#039; for single quotes
+    }
+    // --- END HELPER FUNCTION ---
+
+
     // --- Authentication Logic ---
 
     async function checkAuth() {
@@ -334,4 +349,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderDetailedResults(results) {
         if (!Array.isArray(results) || results.length === 0) {
-            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission, or data could not be parsed into a displayable format.</p
+            detailedResultsContent.innerHTML = '<p>No detailed results available for this submission, or data could not be parsed into a displayable format.</p>';
+            return;
+        }
+
+        let html = '';
+        results.forEach((item, index) => {
+            // Determine outcome class based on available data
+            const outcomeClass = item.outcome === 'Correct' ? 'correct' : (item.outcome === 'Incorrect' ? 'incorrect' : '');
+
+            html += `
+                <div class="question-item">
+                    <h4>${escapeHtml(item.question || `Question ${index + 1}`)}</h4>
+                    <p><strong>Your Answer:</strong> ${escapeHtml(item.user_answer || 'N/A')}</p>
+                    ${item.correct_answer && item.correct_answer !== 'N/A' ? `<p><strong>Correct Answer:</strong> ${escapeHtml(item.correct_answer)}</p>` : ''}
+                    ${item.score && item.score !== 'N/A' ? `<p><strong>Score:</strong> <span class="math-inline">\{escapeHtml\(item\.score\)\}</span>{item.max_score && item.max_score !== 'N/A' ? `/${escapeHtml(item.max_score)}` : ''}</p>` : ''}
+                    ${item.outcome && item.outcome !== 'Not available' ? `<p><strong>Outcome:</strong> <span class="<span class="math-inline">\{outcomeClass\}"\></span>{escapeHtml(item.outcome)}</span></p>` : ''}
+                </div>
+            `;
+        });
+        detailedResultsContent.innerHTML = html;
+    }
+
+    function closeModal() {
+        detailsModal.style.display = 'none';
+        detailedResultsContent.innerHTML = '';
+    }
+
+    // Close modal listeners
+    closeModalBtn.addEventListener('click', closeModal);
+    closeSpanButton.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+        if (event.target === detailsModal) {
+            closeModal();
+        }
+    });
+
+    // Initial check on page load
+    checkAuth();
+});
