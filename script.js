@@ -637,29 +637,29 @@ ${resultsTextContent}
     }
 
     // Save submission to database function
-	async function saveSubmission(parentName, childName, parentEmail, score, expectations, userAnswers) {
-		const totalQuestions = questions.length; // Add this line
-		try {
-			const response = await fetch('/.netlify/functions/save-submission', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					parentName,
-					childName,
-					parentEmail,
-					score,
-					expectations,
-					detailedResults: userAnswers,
-					totalQuestions: totalQuestions // Add this line
-				}),
-			});
-			// ... rest of your saveSubmission function
-		} catch (error) {
-			// ...
-		}
-	}
+async function saveSubmission(parentName, childName, parentEmail, score, expectations, userAnswers) {
+    const totalQuestions = questions.length; // Add this line
+    try {
+        const response = await fetch('/.netlify/functions/save-submission', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                parentName,
+                childName,
+                parentEmail,
+                score,
+                expectations,
+                detailedResults: userAnswers,
+                totalQuestions: totalQuestions // Add this line
+            }),
+        });
+        // ... rest of your saveSubmission function
+    } catch (error) {
+        // ...
+    }
+}
 
     // --- Event Listeners ---
 
