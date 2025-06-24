@@ -1,13 +1,15 @@
+// netlify/functions/get-submissions.js
 const { Pool } = require('pg');
 
 let conn;
 
+// Helper to get database connection (lazy initialization)
 async function getDbConnection() {
   if (!conn) {
     conn = new Pool({
-      connectionString: process.env.NETLIFY_DATABASE_URL,
+      connectionString: process.env.NETLIFY_DATABASE_URL, // Corrected env var
       ssl: {
-        rejectUnauthorized: false,
+        rejectUnauthorized: false, // Required for NeonDB due to self-signed certs or specific configurations
       },
     });
   }
@@ -15,7 +17,7 @@ async function getDbConnection() {
 }
 
 exports.handler = async (event, context) => {
-  // Basic Authentication
+  // Basic Authentication (validating against FRONTEND_PASSWORD from env vars)
   const authHeader = event.headers.authorization;
   const expectedPassword = process.env.FRONTEND_PASSWORD;
 
@@ -35,18 +37,30 @@ exports.handler = async (event, context) => {
 
   try {
     const pool = await getDbConnection();
-    // Corrected column name to 'submitted_at'
-    const result = await pool.query('SELECT * FROM assessments ORDER BY submitted_at DESC'); 
+    // Corrected: Querying 'submitted_at' column instead of 'submission_time'
+    const result = await pool.query('SELECT id, child_name, parent_name, parent_email, score, total_questions, expectations, submitted_at FROM assessments ORDER BY submitted_at DESC');
+    
+    // Map the 'submitted_at' column to 'submission_time' for frontend consistency
+    const submissions = result.rows.map(row => ({
+      id: row.id,
+      child_name: row.child_name,
+      parent_name: row.parent_name,
+      parent_email: row.parent_email,
+      score: row.score,
+      total_questions: row.total_questions,
+      expectations: row.expectations,
+      submission_time: new Date(row.submitted_at).toISOString(), // Use submitted_at and format
+    }));
 
     return {
       statusCode: 200,
-      body: JSON.stringify(result.rows),
+      body: JSON.stringify(submissions),
     };
   } catch (error) {
-    console.error('Error fetching all submissions:', error);
+    console.error('Error fetching submissions:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Failed to fetch submissions.', error: error.message }),
+      body: JSON.stringify({ message: 'Failed to fetch submissions', error: error.message }),
     };
   }
 };
