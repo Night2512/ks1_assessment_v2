@@ -273,10 +273,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Details Modal Logic ---
-    function renderDetailedResultsInModal(detailedResultsString) {
+    function renderDetailedResultsInModal(detailedResultsData) { // Renamed parameter for clarity
         let detailsHtml = '<p>No detailed results available.</p>';
+        let results;
         try {
-            const results = JSON.parse(detailedResultsString);
+            // Check if it's already an object, or if it's a string that needs parsing
+            if (typeof detailedResultsData === 'string') {
+                results = JSON.parse(detailedResultsData);
+            } else if (typeof detailedResultsData === 'object' && detailedResultsData !== null) {
+                results = detailedResultsData; // It's already an object
+            } else {
+                throw new Error("Invalid detailed results format.");
+            }
+
             if (results && typeof results === 'object') {
                 detailsHtml = '<ul>';
                 for (const key in results) {
@@ -288,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailsHtml += '</ul>';
             }
         } catch (e) {
-            console.error("Error parsing detailed results JSON:", e);
+            console.error("Error parsing/processing detailed results:", e);
             detailsHtml = '<p class="error-message">Error loading detailed results format.</p>';
         }
         modalDetailsContent.innerHTML = detailsHtml;
