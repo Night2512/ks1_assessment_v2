@@ -1,5 +1,5 @@
 [build]
-  node_version = "20" # Recommended for Netlify Functions, ensures modern JS features
+  node_version = "22" # Recommended for Netlify Functions, ensures modern JS features
   functions = "netlify/functions"
   publish = "."
   base = "/"

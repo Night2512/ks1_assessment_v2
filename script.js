@@ -637,34 +637,29 @@ ${resultsTextContent}
     }
 
     // Save submission to database function
-    async function saveSubmission(parentName, childName, parentEmail, score, expectations, userAnswers) {
-        try {
-            const response = await fetch('/.netlify/functions/save-submission', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    parentName,
-                    childName,
-                    parentEmail,
-                    score,
-                    expectations,
-                    detailedResults: userAnswers, // Save all user answers
-                    submissionTime: new Date().toISOString()
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error saving submission to DB:', errorData.message);
-            }
-            // No user-facing message needed for DB save, console.log for dev/debug
-            console.log('Submission saved to DB successfully (or attempt made).');
-        } catch (error) {
-            console.error('Network or unexpected error during DB save:', error);
-        }
-    }
+	async function saveSubmission(parentName, childName, parentEmail, score, expectations, userAnswers) {
+		const totalQuestions = questions.length; // Add this line
+		try {
+			const response = await fetch('/.netlify/functions/save-submission', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					parentName,
+					childName,
+					parentEmail,
+					score,
+					expectations,
+					detailedResults: userAnswers,
+					totalQuestions: totalQuestions // Add this line
+				}),
+			});
+			// ... rest of your saveSubmission function
+		} catch (error) {
+			// ...
+		}
+	}
 
     // --- Event Listeners ---
 

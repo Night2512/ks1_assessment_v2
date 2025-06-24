@@ -1,53 +1,52 @@
-const { Client } = require('pg');
+// netlify/functions/save-submission.js
+const { Pool } = require('pg');
+
+let conn; // Use a single connection pool
+
+// Helper to get database connection (lazy initialization)
+async function getDbConnection() {
+  if (!conn) {
+    conn = new Pool({
+      connectionString: process.env.NETLIFY_DATABASE_URL, // Using the corrected env var
+      ssl: {
+        rejectUnauthorized: false, // Required for NeonDB due to self-signed certs or specific configurations
+      },
+    });
+  }
+  return conn;
+}
 
 exports.handler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  try {
+    const { parentName, childName, parentEmail, score, expectations, detailedResults, totalQuestions } = JSON.parse(event.body);
+
+    if (!childName || !parentEmail || score === undefined || expectations === undefined || totalQuestions === undefined) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Missing required fields: childName, parentEmail, score, expectations, totalQuestions.' }),
+      };
     }
 
-    const { parentName, childName, parentEmail, score, expectations, detailedResults, submissionTime } = JSON.parse(event.body);
+    const pool = await getDbConnection();
+    await pool.query(
+      `INSERT INTO assessments (child_name, parent_name, parent_email, score, total_questions, expectations, detailed_results)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [childName, parentName, parentEmail, score, totalQuestions, expectations, JSON.stringify(detailedResults)] // detailedResults as JSONB
+    );
 
-    const connectionString = process.env.NETLIFY_DATABASE_URL;
-
-    if (!connectionString) {
-        console.error('NETLIFY_DATABASE_URL environment variable is not set.');
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Database connection string missing.' })
-        };
-    }
-
-    const client = new Client({
-        connectionString: connectionString,
-        ssl: {
-            rejectUnauthorized: false // Required for NeonDB in some environments, adjust as needed for your setup
-        }
-    });
-
-    try {
-        await client.connect();
-
-        const insertQuery = `
-            INSERT INTO assessments (parent_name, child_name, parent_email, score, expectations, detailed_results, submitted_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id;
-        `;
-        const values = [parentName, childName, parentEmail, score, expectations, detailedResults, submissionTime];
-
-        const res = await client.query(insertQuery, values);
-        console.log('Submission saved to DB with ID:', res.rows[0].id);
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: 'Submission saved successfully!', id: res.rows[0].id })
-        };
-    } catch (error) {
-        console.error('Error saving submission to database:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Failed to save submission to database.', error: error.message })
-        };
-    } finally {
-        await client.end();
-    }
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Submission saved successfully!' }),
+    };
+  } catch (error) {
+    console.error('Error saving submission:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Failed to save submission.', error: error.message }),
+    };
+  }
 };
